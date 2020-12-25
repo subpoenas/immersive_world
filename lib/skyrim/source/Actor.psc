@@ -1,7 +1,6 @@
 Scriptname Actor extends ObjectReference Hidden
 
 Import Utility
-import po3_SKSEFunctions
 
 ; Relationship functions use the following values:
 ; 4 - Lover
@@ -35,9 +34,9 @@ endFunction
 Function MakePlayerFriend()
 	ActorBase myBase = GetActorBase()
 	if myBase.IsUnique()
-		if GetRelationshipRank(Game.GetPlayer())== 0
+		if GetRelationshipRank(imsAniQuest.getPlayerActor()) == 0
 ; 			debug.trace(self + " MakePlayerFriend called on neutral actor - changed to FRIEND.")
-			SetRelationshipRank(Game.GetPlayer(), 1)
+			SetRelationshipRank(imsAniQuest.getPlayerActor(), 1)
 		else
 ; 			debug.trace(self + " MakePlayerFriend called on non-neutral actor - NO EFFECT.")
 		endif
@@ -455,7 +454,7 @@ Function ModAV(string asValueName, float afAmount)
   ModActorValue(asValueName, afAmount)
 EndFunction
 
-; Modifies this actor's rank in the faction
+; Modifies this actor's rank in the factionf
 Function ModFactionRank(Faction akFaction, int aiMod) native
 
 ; Pop this actor to the initial location for a package. Mainly for use on 
@@ -722,6 +721,11 @@ Function DrawWeapon() native
 ; 2 - searching
 Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
 	Debug.Notification("OnCombatStateChanged " + aeCombatState)
+	
+	if aeCombatState == 0
+		initState()
+	endif
+	
 EndEvent
 
 ; Event that is triggered when this actor sits in the furniture
@@ -738,247 +742,172 @@ EndEvent
 
 ; Event that is triggered when this actor begins to die
 Event OnDying(Actor akKiller)
+	UnregisterForUpdate()  ; alton added
+	dropObject(GetEquippedWeapon()) ; alton added
 EndEvent
 
 ; Event received when an actor enters bleedout.
 Event OnEnterBleedout()	
-	doSearchCloth(3, 15.0)
+
+	if !isDead() && HasKeyWordString("ActorTypeNPC") && GetActorBase().GetSex() == 1
+
+		int _rndint = Utility.RandomInt(1,10)	
+		
+		if _rndint < 3
+			imsAniQuest.playUnconsciousAnimation(self, 1) ;
+			SetUnconscious(true)
+			dropObject(GetEquippedWeapon()) ; alton added
+			doLossConsciousLoop(10, 2.0)
+		endif
+	endif
 EndEvent
 
 ; Event recieved when this object is completely loaded - will be fired every time this object is loaded
-Sound shameSound = None
-Sound shockSound = None
-Sound faintSound = None
-Sound tearSound = None
+ImmersiveSoundScript imsSndQuest = None
+ImmersiveAnimationScript imsAniQuest = None
+Sound[] soundArray = None
 
-Event OnLoad()
+function initImmersive() 
+	if imsAniQuest == None
+		if HasKeyWordString("ActorTypeNPC") && !isDead()
+					UnregisterForUpdate()
 
-	if isAliveHumanWithPlayer(self)
-		if tearSound == none
-					int _gender = GetActorBase().GetSex()
-					string _name = GetActorBase().GetName()
+					imsAniQuest =  (Game.GetFormFromFile(0x06005900, "AltonImmersiveAnimation.esp") As ImmersiveAnimationScript)
+					imsSndQuest =  (Game.GetFormFromFile(0x0603D374, "AltonImmersiveSound.esp") As ImmersiveSoundScript)
+					if imsSndQuest 
+						soundArray = new Sound[4]
 
-					tearSound  = (Game.GetFormFromFile(0x334A9, "Skyrim.esm") As Sound)
-					
-					; if victimGender == 0; male
-					; 	_voiceType = _checkVoiceType(victimActor, victimGender)
-					; 	if _voiceType == "Child" || _voiceType == "Young"
-					; 		hurtSound =   (Game.GetFormFromFile(0x05033256, "AltonImmersiveSound.esp") As Sound)
-					; 		shameSound =  (Game.GetFormFromFile(0x05033257, "AltonImmersiveSound.esp") As Sound)		
-					; 		shockSound =  (Game.GetFormFromFile(0x05033258, "AltonImmersiveSound.esp") As Sound)
-					; 	elseif _voiceType == "Bandit"
-					; 		hurtSound =   (Game.GetFormFromFile(0x0503324C, "AltonImmersiveSound.esp") As Sound)
-					; 		shameSound =  (Game.GetFormFromFile(0x0503324D, "AltonImmersiveSound.esp") As Sound)		
-					; 		shockSound =  (Game.GetFormFromFile(0x0503324E, "AltonImmersiveSound.esp") As Sound)											
-					; 	elseif _voiceType == "Old"
-					; 		hurtSound =   (Game.GetFormFromFile(0x0502E124, "AltonImmersiveSound.esp") As Sound)
-					; 		shameSound =  (Game.GetFormFromFile(0x0502E125, "AltonImmersiveSound.esp") As Sound)		
-					; 		shockSound =  (Game.GetFormFromFile(0x0502E126, "AltonImmersiveSound.esp") As Sound)
-					; 	else ; common
-					; 		hurtSound =   (Game.GetFormFromFile(0x05014C05, "AltonImmersiveSound.esp") As Sound)
-					; 		shameSound =  (Game.GetFormFromFile(0x05014C03, "AltonImmersiveSound.esp") As Sound)		
-					; 		shockSound =  (Game.GetFormFromFile(0x05014C07, "AltonImmersiveSound.esp") As Sound)							
-					; 	endif
-					; endif 
-			
-					if _gender == 1; female
-						String _voiceType = _checkVoiceType(self as Actor, _gender)
-						if _voiceType == "Player"
-							faintSound =  (Game.GetFormFromFile(0x06014C0A, "AltonImmersiveSound.esp") As Sound)
-							shameSound =  (Game.GetFormFromFile(0x06014C0C, "AltonImmersiveSound.esp") As Sound)		
-							shockSound =  (Game.GetFormFromFile(0x06014C0D, "AltonImmersiveSound.esp") As Sound)					
-						elseif _voiceType == "Teen"
-							faintSound =  (Game.GetFormFromFile(0x0602E137, "AltonImmersiveSound.esp") As Sound)
-							shameSound =  (Game.GetFormFromFile(0x0602E139, "AltonImmersiveSound.esp") As Sound)		
-							shockSound =  (Game.GetFormFromFile(0x0602E13A, "AltonImmersiveSound.esp") As Sound)
-						elseif _voiceType == "Young"
-							faintSound =  (Game.GetFormFromFile(0x06014C0A, "AltonImmersiveSound.esp") As Sound)
-							shameSound =  (Game.GetFormFromFile(0x06014C0C, "AltonImmersiveSound.esp") As Sound)		
-							shockSound =  (Game.GetFormFromFile(0x06014C0D, "AltonImmersiveSound.esp") As Sound)
-						elseif _voiceType == "Coward"
-							faintSound =  (Game.GetFormFromFile(0x06038368, "AltonImmersiveSound.esp") As Sound)
-							shameSound =  (Game.GetFormFromFile(0x0603836A, "AltonImmersiveSound.esp") As Sound)		
-							shockSound =  (Game.GetFormFromFile(0x0603836B, "AltonImmersiveSound.esp") As Sound)													
-						elseif _voiceType == "Evan"
-							faintSound =  (Game.GetFormFromFile(0x0603836F, "AltonImmersiveSound.esp") As Sound)
-							shameSound =  (Game.GetFormFromFile(0x06038371, "AltonImmersiveSound.esp") As Sound)		
-							shockSound =  (Game.GetFormFromFile(0x06038372, "AltonImmersiveSound.esp") As Sound)						
-						elseif _voiceType == "Sultry" || _voiceType == "Shrill" || _voiceType == "Con"
-							faintSound =  (Game.GetFormFromFile(0x06038363, "AltonImmersiveSound.esp") As Sound)
-							shameSound =  (Game.GetFormFromFile(0x06038365, "AltonImmersiveSound.esp") As Sound)		
-							shockSound =  (Game.GetFormFromFile(0x06038366, "AltonImmersiveSound.esp") As Sound)												
-						elseif _voiceType == "Old"
-							faintSound =  (Game.GetFormFromFile(0x0602E141, "AltonImmersiveSound.esp") As Sound)
-							shameSound =  (Game.GetFormFromFile(0x0602E143, "AltonImmersiveSound.esp") As Sound)		
-							shockSound =  (Game.GetFormFromFile(0x0602E144, "AltonImmersiveSound.esp") As Sound)
-						else
-							faintSound =  (Game.GetFormFromFile(0x0602E13C, "AltonImmersiveSound.esp") As Sound)
-							shameSound =  (Game.GetFormFromFile(0x0602E13E, "AltonImmersiveSound.esp") As Sound)		
-							shockSound =  (Game.GetFormFromFile(0x0602E13F, "AltonImmersiveSound.esp") As Sound)						
-						endif
-
-						Debug.Notification("name " + _name + ",voiceType " + _voiceType)
+						soundArray[0] = imsSndQuest.getShockSound(GetActorBase().GetSex() == 1, self)
+						soundArray[1] = imsSndQuest.getShameSound(GetActorBase().GetSex() == 1, self)
+						soundArray[2] = imsSndQuest.getFaintSound(GetActorBase().GetSex() == 1, self)
+						soundArray[3] = imsSndQuest.getTearSound()
 					endif
-		endif 	
-	endif 
+					
+		endif
+	endif
+endfunction
+
+Event OnItemAdded(Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akSourceContainer)
+	Actor _actor = self as Actor
+
+	if !imsAniQuest.isActorPlayer(self)
+			int typecode = akBaseItem.getType()
+			
+			if typecode == 26  ; armor
+				Armor _armor = akBaseItem as Armor 
+				_actor.playDressAnimation(_actor, _armor)
+			endif 
+	endif
 EndEvent
 
 Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile, bool abPowerAttack, bool abSneakAttack, bool abBashAttack, bool abHitBlocked)
 		
-	Weapon aggressorWeapon = akSource as Weapon
+	Weapon aggressorWeapon = akSource as Weapon 
 
-	if isAliveHumanWithPlayer(self) && (abPowerAttack || abBashAttack) && _checkAvailableWeapon(aggressorWeapon)
-			
-		Actor aggressorActor = akAggressor as actor		
+	if  HasKeyWordString("ActorTypeNPC") && (abPowerAttack || abBashAttack)		
 		
-		; Explosion exp = akSource as Explosion
-	
-			; -1 - None
-			; 0 - Male
-			; 1 - Female
-			int victimGender = GetActorBase().GetSex()
-			;int aggressorGender = aggressorActor.GetActorBase().GetSex()
+		if imsAniQuest == None
+			initImmersive()
+			wait(0.5)
+		endif 
 
-			int rndint = Utility.RandomInt()
-			float volumeUp = 0.4
-
-			bool isItemRemove = false
-			Armor[] actorArmorList = new Armor[10]
-
+		if imsAniQuest.checkAvailableHardWeapon(aggressorWeapon)
+			Actor aggressorActor = akAggressor as actor		
+			
 			Debug.Notification("onHit by " + aggressorActor.GetActorBase().getName())
+			; Explosion exp = akSource as Explosion
+		
+				; -1 - None
+				; 0 - Male
+				; 1 - Female
+				int victimGender = GetActorBase().GetSex()
+				;int aggressorGender = aggressorActor.GetActorBase().GetSex()
 
-			; if exp
-			; 	isFaint = true
-			; endif			
+				int rndint = Utility.RandomInt()
+				float volumeUp = 0.4
 
-			if abHitBlocked
-				actorArmorList[4]	= GetWornForm(0x00000200) As Armor	; actorShield
+				Armor[] actorArmorList = new Armor[10]
 
-				; if victim is female, shield will be broken or dropped
-				if victimGender == 1
-					if actorArmorList[4]
-						if rndint < 15
-							doDropOnlyItems(self, actorArmorList[4], "shock", volumeUp)			
-						endif 					
-					endif
-				endif
-			else 				
-				
-				actorArmorList[0]	= GetWornForm(0x00000001) As Armor 	; actorHelmet
-				actorArmorList[1]	= GetWornForm(0x00000008) As Armor	; actorHand
-				actorArmorList[2]	= GetWornForm(0x00000010) As Armor	; actorArm
-				actorArmorList[3]	= GetWornForm(0x00000004) as Armor	; actorArmor
-				actorArmorList[4] 	= GetWornForm(0x00100000) as Armor	; actorBackpack
-				actorArmorList[5] 	= GetWornForm(0x00200000) as Armor	; actorChest
-				actorArmorList[6] 	= GetWornForm(0x08000000) as Armor	; actorShoulder
-				actorArmorList[7] 	= GetWornForm(0x00400000) as Armor	; actorPanty
-				actorArmorList[8] 	= GetWornForm(0x00000002) as Armor	; actorHair
-	
-				; only short distant weapon will be available to break victim's armor
-				if actorArmorList[3]			; actorArmor
-							if rndint < 100
-								doDropOnlyItems(self, actorArmorList[3], "shame", volumeUp)			
+				if abHitBlocked
+					actorArmorList[4]	= GetWornForm(0x00000200) As Armor	; actorShield
 
-								playKnockback(self)
-							endif				
-				elseif actorArmorList[0]				;actorHelmet						
-						if rndint < 40
-							doDropItems(self, actorArmorList[0], rndint, 10, 20, 40, "shock", volumeUp)	
-						endif				
-				elseif actorArmorList[1]			;actorHand
-						if rndint < 30
-							doDropItems(self, actorArmorList[1], rndint, 10, 15, 30, "shock", volumeUp)	
-						endif														
-				elseif actorArmorList[2]			; actorArm
-						if rndint < 30
-							doDropItems(self, actorArmorList[2], rndint, 10, 20, 30, "shock", volumeUp)	
-						endif											
-				elseif actorArmorList[6]			; actorShoulder
-						if rndint < 30
-							doDropItems(self, actorArmorList[6], rndint, 10, 20, 30, "shock", volumeUp)	
-						endif																	
-				elseif actorArmorList[5]			; actorChest
-						if rndint < 20
-							doDropItems(self, actorArmorList[5], rndint, 10, 15, 20, "shock", volumeUp)	
-						endif													
-				elseif actorArmorList[4]			; actorBackpack						
-						if rndint < 18							
-							doDropOnlyItems(self, actorArmorList[4], "shock", volumeUp)			
-						endif 						
-				; elseif actorArmorList[3]			; actorArmor
-				; 		if rndint < 15
-				;			doDropItems(self, actorArmorList[3], rndint, 3, 8, 15, "shame", volumeUp)	
-				; 			playKnockback(self)
-				; 		endif
-				elseif actorArmorList[7] && GetRelationshipRank(aggressorActor) < -1 ; panty, -1 means rival
-						if rndint < 50 							
-							doDropItems(self, actorArmorList[7], rndint, 10, 20, 50, "faint", volumeUp)							
+					; if shield will be dropped
+					if victimGender == 1
+						if actorArmorList[4]
+							if rndint < 10
+								imsAniQuest.doDropItems(self, actorArmorList[4], "shock", volumeUp, soundArray)
+							endif 					
 						endif
-				else
-						; naked or creature
+					else 
+						if actorArmorList[4]
+							if rndint < 3
+								imsAniQuest.doDropItems(self, actorArmorList[4], "shock", volumeUp, soundArray)		
+							endif 					
+						endif
+					endif
+				else 				
+					
+					actorArmorList[0]	= GetWornForm(0x00000001) As Armor 	; actorHelmet
+					actorArmorList[1]	= GetWornForm(0x00000008) As Armor	; actorHand
+					actorArmorList[2]	= GetWornForm(0x00000010) As Armor	; actorArm
+					actorArmorList[3]	= GetWornForm(0x00000004) as Armor	; actorArmor
+					actorArmorList[4] 	= GetWornForm(0x00100000) as Armor	; actorBackpack
+					actorArmorList[5] 	= GetWornForm(0x00200000) as Armor	; actorChest
+					actorArmorList[6] 	= GetWornForm(0x08000000) as Armor	; actorShoulder
+					actorArmorList[7] 	= GetWornForm(0x00400000) as Armor	; actorPanty
+					actorArmorList[8] 	= GetWornForm(0x00000002) as Armor	; actorHair
+		
+					; only short distant weapon will be available to break victim's armor
+					if actorArmorList[3]
+						imsAniQuest.doDropItems(self, actorArmorList[3], "shock", volumeUp, soundArray)		
+						; Debug.SendAnimationEvent(self, "Erotic_KnockOut_End")
+						; actor aggressor = imsAniQuest.findNearestNpcHuman(self, 800)
+
+						; if aggressor 
+						; 	wait(5.0)
+						; 	imsAniQuest.doChokeEvent("drunk", self, aggressor, 1)
+						; endif
+
+					elseif actorArmorList[0]				;actorHelmet						
+							if rndint < 40
+								imsAniQuest.doTearItems(self, actorArmorList[0], rndint, 10, 20, 40, "shock", volumeUp, soundArray)
+							endif
+					elseif actorArmorList[1]			;actorHand
+							if rndint < 30
+								imsAniQuest.doTearItems(self, actorArmorList[1], rndint, 10, 15, 30, "shock", volumeUp, soundArray)	
+							endif
+					elseif actorArmorList[2]			; actorArm
+							if rndint < 30
+								imsAniQuest.doTearItems(self, actorArmorList[2], rndint, 10, 20, 30, "shock", volumeUp, soundArray)
+							endif
+					elseif actorArmorList[6]			; actorShoulder
+							if rndint < 30
+								imsAniQuest.doTearItems(self, actorArmorList[6], rndint, 10, 20, 30, "shock", volumeUp, soundArray)	
+							endif																	
+					elseif actorArmorList[5]			; actorChest
+							if rndint < 20
+								imsAniQuest.doTearItems(self, actorArmorList[5], rndint, 10, 15, 20, "shock", volumeUp, soundArray)
+							endif													
+					elseif actorArmorList[4]			; actorBackpack						
+							if rndint < 18							
+								imsAniQuest.doDropItems(self, actorArmorList[4], "shock", volumeUp, soundArray)		
+							endif 						
+					elseif actorArmorList[3]			; actorArmor
+							if rndint < 15
+								imsAniQuest.doTearItems(self, actorArmorList[3], rndint, 3, 8, 15, "shame", volumeUp, soundArray)	
+								imsAniQuest.playKnockbackAnimation(self)
+							endif
+					elseif actorArmorList[7] && GetRelationshipRank(aggressorActor) < -1 ; panty, -1 means rival
+							if rndint < 50 							
+								imsAniQuest.doTearItems(self, actorArmorList[7], rndint, 10, 20, 50, "faint", volumeUp, soundArray)						
+							endif
+					else
+							; naked or creature
+					endif
 				endif
 			endif
 	endif 	
 EndEvent
-
-function doDropItems (Actor _actor, Armor _armor, int rndint, int heavyTh, int lightTh, int clothTh, string type, float volumeUp)
-	if  rndint < clothTh
-		int _rndint = Utility.RandomInt(1,10)		
-		if _armor.IsHeavyArmor()
-			if rndint < heavyTh								
-				playDropItemWithSFX(_actor, _armor, volumeUp, type)
-			endif
-		elseif _armor.IsLightArmor()
-			if  rndint < lightTh
-				if _rndint < 2
-					playRemoveItemWithSFX(_actor, _armor, volumeUp, type)
-				else 
-					playDropItemWithSFX(_actor, _armor, volumeUp, type)
-				endif
-			endif								
-		else
-			if _rndint < 5
-				playRemoveItemWithSFX(_actor, _armor, volumeUp, type)						
-			Else
-				playDropItemWithSFX(_actor, _armor, volumeUp, type)
-			endif
-		endif 
-	endif
-endFunction
-
-function doDropOnlyItems (Actor _actor, Armor _armor, string type, float volumeUp)
-	playDropItemWithSFX(_actor, _armor, volumeUp, type)
-endFunction 
-
-function playDropItemWithSFX (Actor _actor, Armor _armor, float volumeUp, String type) 
-	if type == "shame"
-		Sound.SetInstanceVolume(shameSound.Play(self as Actor), volumeUp)
-	elseif type == "shock"		
-		Sound.SetInstanceVolume(shockSound.Play(self as Actor), volumeUp)		
-	else	
-		Sound.SetInstanceVolume(faintSound.Play(self as Actor), volumeUp)			
-	endif
-	_actor.DropObject(_armor)
-endFunction
-
-function playRemoveItemWithSFX (Actor _actor, Armor _armor, float volumeUp, String type) 
-	; play tear sound
-	Sound.SetInstanceVolume(tearSound.Play(_actor), volumeUp)
-
-	if type == "shame"
-		Sound.SetInstanceVolume(shameSound.Play(self as Actor), volumeUp)
-	elseif type == "shock"		
-		Sound.SetInstanceVolume(shockSound.Play(self as Actor), volumeUp)		
-	else	
-		Sound.SetInstanceVolume(faintSound.Play(self as Actor), volumeUp)			
-	endif	
-	_actor.RemoveItem(_armor)
-endFunction
-
-
-bool Function _checkAvailableWeapon(Weapon _weapon)
-	return _weapon.IsMace() || _weapon.IsGreatsword() || _weapon.IsWarhammer() || _weapon.IsWarAxe() || _weapon.IsBattleaxe()
-EndFunction 
 
 ; Event that is triggered when this actor changes from one location to another
 Event OnLocationChange(Location akOldLoc, Location akNewLoc)
@@ -989,19 +918,25 @@ Event OnLycanthropyStateChanged(bool abIsWerewolf)
 EndEvent
 
 ; Event received when this actor equips something - akReference may be None if object is not persistent
-Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)		
+Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
+	; Debug.Notification("OnObjectEquipped")
+	if imsAniQuest.isAliveHuman(self)  && !imsAniQuest.isActorNaked(self) && !imsAniQuest.isActorPlayer(self)
+		UnregisterForUpdate()  ; alton added		
+		imsAniQuest.rollbackPackages(self) ; alton added
+	endif
 EndEvent
 
 ; Event received when this actor unequips something - akReference may be None if object is not persistent
-Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
-	Debug.Notification("OnObjectUnequipped")
+Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)	
+	if imsAniQuest == None
+		initImmersive()
+		wait(0.5)
+	endif
 
-	if isAliveHuman(self)
-		Armor _armor =  GetWornForm(0x00000004) as Armor ; actorArmor
-
-		if _armor == none
-			playNakeCoverAnimation(self)
-			doSearchCloth(2, 8.0)
+	if imsAniQuest.isAliveHuman(self)  && imsAniQuest.isActorNaked(self)	
+		imsAniQuest.playNakeCoverAnimation(self)
+		if  !imsAniQuest.isActorPlayer(self)
+			doSearchClothLoop(10, 8.0)
 		endif
 	endif
 EndEvent
@@ -1229,295 +1164,78 @@ Function ResetExpressionOverrides() native
 ; Returns all factions with the specified min and max ranks (-128 to 127) 
 Faction[] Function GetFactions(int minRank, int maxRank) native
 
-; user defined function
+; add 
+int unconsciousStep = 0
+function initState ()
+endfunction
 
-bool function _checkNaked(actor _actor) 	
-	if _actor.GetWornForm(0x00000004) && _actor.GetWornForm(0x00400000)
-		return false
-	else 
-		return true		
-	endif
-endFunction
-
-String function _checkVoiceType(actor _actor, 	int _gender)
-	String vType = None
-	ActorBase actBase = _actor.GetBaseObject() as ActorBase    
-	VoiceType actVoiceType = actBase.GetVoiceType()
-	int formId= actVoiceType.GetFormID()
-
-	; if _gender == 0 ; male   					
-	; 	if formId == 0x13AE8
-	; 		vType = "Child"            
-	; 	elseif formId == 0x13AD1
-	; 		vType = "Young"
-	; 	elseif formId == 0x9843B                           
-	; 		vType = "Bandit"
-	; 	elseif formId == 0x13AD8                           
-	; 		vType = "Commander"                
-	; 	elseif formId == 0x13ADA                    
-	; 		vType = "Brute"       
-	; 	elseif formId == 0x13AD6 ||  formId == 0x13AD7                    
-	; 		vType = "Old"                 
-	; 	elseif formId == 0x13AEC                    
-	; 		vType = "Khajit"     
-	; 	elseif formId == 0x13AEA                     
-	; 		vType = "Orc"    
-	; 	elseif formId == 0x13AEE                  
-	; 		vType = "Argonian"                                                                        
-	; 	else                             
-	; 		vType = "Common"
-	; 	endif           
-	; endif
-
-	if _gender == 1 ; female   
-		if _actor == Game.GetPlayer()
-			vType = "Player"
-
-		elseif formId == 0x13AE9 ;Teen
-			vType = "Teen"
-
-		elseif formId == 0x13ADC ;young
-			vType = "Young"
-
-		elseif formId == 0x13AE3 ;commander
-			vType = "Commander"                
-
-		elseif formId == 0x13AE5 ;coward
-			vType = "Coward"                    
-			
-		elseif formId == 0x1B560 ;solder
-			vType = "Solder"                  
-
-		elseif formId == 0x13BC3 ;shrill
-			vType = "Shrill"   
-
-		elseif formId == 0x13AE0 ;sultry
-			vType = "Sultry"    
-
-		elseif formId == 0x13AE4 ;con
-			vType = "Con"    
-
-		elseif formId == 0x13ADD ;even
-			vType = "Evan" 			
-
-		elseif formId == 0x13AE1 || formId == 0x13AE2 ; old
-			vType = "Old"   
-
-		elseif formId == 0x13AF3 || formId == 0x13Af1 ; elf
-			vType = "Elf"
-
-		elseif formId == 0x13AE8 ; orc
-			vType = "Orc"
-
-		elseif formId == 0x13AED ; Khajit
-			vType = "Khajit"  
-
-		elseif formId == 0x13AE9 ; Argonian
-			vType = "Argonian"                             
-			
-		else 
-			vType = "Common"
-		endif  
-	endif        
-
-	return vType
-endFunction
-
-function doSearchCloth(int _updateCnt, float _sleep)
-
+function doSearchClothLoop(int _updateCnt, float _sleep)
 	; in combat, not search...
-
-	updateMode = "searchArmor"
-	updateCnt = _updateCnt
+	Debug.Notification("doSearchClothLoop")
+	GoToState("updateState")
 	UnregisterForUpdate()
 	RegisterForSingleUpdate(_sleep)
 endFunction
 
-string updateMode = "nothing"
-int   updateCnt = 0
+function doLossConsciousLoop(int _updateCnt, float _sleep)
+	; in combat, not search...
+	Debug.Notification("doLossConsciousLoop")
+	GoToState("updateState")
+	UnregisterForUpdate()
+	RegisterForSingleUpdate(_sleep)
+	unconsciousStep = 0
+endFunction
 
-event OnUpdate()
+function playDressAnimation (actor _actor, armor _armor)
+	imsAniQuest.playDressAnimation(_actor, _armor)
+endfunction
 
-	Actor _actor = self as actor
-	if !_actor.isDead() 
 
-		updateCnt -= 1
-		
-		if (updateCnt < 0) 
-			updateMode = "nothing"
-			updateCnt = 0
-		else 
-			if updateMode == "searchArmor"
-				
-				Armor _armor =  _actor.GetWornForm(0x00000004) as Armor ; actorArmor
+State defaultUpdate
+	event OnUpdate()
+	EndEvent	
+EndState
 
-				if _armor == none	
-					; naked 
-					int _rndint = Utility.RandomInt(1,3)
+state updateState
+	event OnUpdate()				
+		Debug.Notification("OnUpdate")
+		Actor _actor = self as actor
+		if !imsAniQuest.isActorPlayer(self) && HasKeyWordString("ActorTypeNPC") && !isDead()				
+				float sleep = 15.0
+				if IsBleedingOut()
+					sleep = 20.0
+					RegisterForSingleUpdate(sleep)
+				; else if bind
+				elseif IsUnconscious()
+					Debug.Notification("check unconsious")
 
-					if _rndint == 1
-						Debug.SendAnimationEvent(_actor, "Erotic_CoverSelfBra")
-					elseif _rndint == 2
-						Debug.SendAnimationEvent(_actor, "Erotic_CoverSelfVag")
-					else 
-						Debug.SendAnimationEvent(_actor, "Erotic_CoverSelfAll_01")
+					unconsciousStep += 1
+					if unconsciousStep == 4
+						imsAniQuest.playUnconsciousAnimation(self, 2)					
+					elseif unconsciousStep > 6
+						SetUnconscious(false)
+						imsAniQuest.playUnconsciousAnimation(self, 3)
+						sleep = 5.0
 					endif
+					RegisterForSingleUpdate(sleep)
+				elseif imsAniQuest.isActorNaked(_actor)
+					Debug.Notification("check naked")
+					if IsInCombat()
+						; naked animation 
+						imsAniQuest.playNakeCoverOnCombatAnimation(_actor)				
+					else
+						imsAniQuest.doSearchClothes(_actor)
+						sleep = 5.0						
+					endif 			
 
-					if !_actor.IsBleedingOut()
-						if !doSearchArmor(_actor)
-							RegisterForSingleUpdate(10.0)
-							Debug.Notification("not found armor, so next time it will try to ")
-						else 
-							updateMode = "nothing"	
-						endif				
-					else 
-						RegisterForSingleUpdate(10.0)
-					endif	
+					RegisterForSingleUpdate(sleep)
 				else 
-					Debug.Notification("equiped armor")				
-				endif
-			endif 
-		endif		
-	endif	
-endEvent
-
-bool function doSearchArmor (actor _actor)
-	Debug.Notification("doSearchArmor " + _actor.GetActorBase().getName())
-
-	bool foundArmor =  searchArmor(_actor)
-	if foundArmor == false
-		foundArmor = searchBody(_actor)
-	endif	
-
-	return foundArmor
-endFunction
-
-bool function searchArmor (Actor _actor)
-	Debug.Notification("Searching for ... armor")
-
-		int [] _formType = new int[2]
-
-		_formType[0] = 26  ; armor
-		_formType[1] = 124 ; cloth
-
-		int i = 0
-		While (i < 2)
-			ObjectReference[] _refs = FindAllReferencesOfFormType(_actor, _formType[i], 600.0)
-				
-			int _i = 0
-
-			; pickup armor
-			while (_i < _refs.length)	
-
-				if _actor.isDead()
-					return true
-				else
-					_actor.MoveTo(_refs[_i], 1.0 * Math.Sin(_actor.GetAngleZ()), 1.0 * Math.Cos(_actor.GetAngleZ()))
-
-					wait(2.0)
-					playPickupArmorAnimation(_actor)
-
-					if isEquipArmor(_actor, _refs[_i])
-						; Debug.Notification("equiped armor")
-						return true
-					endif
-
-					; Debug.Notification("not equiped armor")
-					wait(1.0)
-				endif
-
-					_i += 1
-			EndWhile
-
-			i += 1
-		EndWhile
-	return false
-endFunction
-
-bool function searchBody (Actor _actor)
-	Debug.Notification("Searching for ... dead body")
-	; if victim not wear anything, then search dead body
-	ObjectReference[] _refs = FindAllReferencesOfFormType(_actor, 43, 600.0)  ; 43 npc, 41: weapon
-
-	int _i = 0
-	while (_i < _refs.length)	
-		 Actor _nearActor = _refs[_i] as Actor	
-
-		 if _nearActor.IsDead()	
-			Armor _deadArmor= _nearActor.GetWornForm(0x00000004) as Armor	; actorArmor		
-
-			; pickup armor
-			if _deadArmor
-
-				; Debug.Notification("found ... dead full body " + _nearActor.GetActorBase().getName())	
-				if _actor.isDead()
-					return true
-				else
-					_actor.MoveTo(_nearActor, 1.0 * Math.Sin(_actor.GetAngleZ()), 1.0 * Math.Cos(_actor.GetAngleZ()))
-
-					playSearchBodyAnimation(_actor)
-
-					ObjectReference _refObj = _nearActor.DropObject(_deadArmor)		
-
-					if isEquipArmor(_actor, _refObj)
-						return true
-					endif
-				endif
-			endif		
-		endif
-		 _i += 1
-	EndWhile 
-
-	return false
-
-	;if nothing found then actor try to take cloth from player
-endFunction
-
-bool function isEquipArmor (actor _actor, ObjectReference _item)
-
-	_actor.AddItem(_item)
-
-	int _check = 0
-	while _check < 5
-		wait(1.0)
-		if _actor.GetWornForm(0x00000004) as Armor
-			return true
-		endif 
-		_check += 1
-	endwhile 
-
-	return false
-endFunction
-
-function playNakeCoverAnimation(Actor _actor)	
-	wait(1.5)
-	Debug.SendAnimationEvent(_actor, "Erotic_CoverSelfAll_02")
-	wait(2.0)
-	Debug.SendAnimationEvent(_actor, "IdleForceDefaultState")
-endFunction
-
-function playPickupArmorAnimation(Actor _actor)
-	Debug.SendAnimationEvent(_actor, "Erotic_PickupArmor")
-	wait(2.0)
-	Debug.SendAnimationEvent(_actor, "IdleForceDefaultState")	
-endFunction
-
-function playSearchBodyAnimation(Actor _actor)
-	Debug.SendAnimationEvent(_actor, "Erotic_SearchBody_In")
-	wait(2.0)
-	Debug.SendAnimationEvent(_actor, "Erotic_SearchBody_Out")
-endFunction
-
-function playKnockback(Actor _actor)
-	Debug.SendAnimationEvent(_actor, "BleedOutStart")
-	wait(0.5)
-	Debug.SendAnimationEvent(_actor, "BleedOutStop")
-endFunction
-
-bool function isAliveHuman(Actor _actor)
-	return !_actor.isDead() && _actor.HasKeyWordString("ActorTypeNPC") && _actor != Game.getPlayer()
-endFunction
-
-bool function isAliveHumanWithPlayer(Actor _actor)
-	return !_actor.isDead() && _actor.HasKeyWordString("ActorTypeNPC")
-endFunction
+					Debug.Notification("goto  defaultUpdate")
+					GoToState("defaultUpdate")					
+				endif	
+		else 
+			Debug.Notification("goto  defaultUpdate")
+			GoToState("defaultUpdate")
+		endif	
+	endEvent
+endstate

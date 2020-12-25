@@ -1,4 +1,5 @@
 Scriptname ObjectReference extends Form Hidden
+Import Utility
 
 bool FUNCTION rampRumble(float power = 0.5, float duration = 0.25, float falloff = 1600.0)
 	; Function to shake cam/controller based on distance from player
@@ -668,28 +669,7 @@ EndEvent
 ; Event received when an item is added to this object's inventory. If the item is a persistant reference, akItemReference will
 ; point at it - otherwise the parameter will be None
 Event OnItemAdded(Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akSourceContainer)
-	Actor _actor = self as Actor
-
-	if isAliveHuman(_actor)
-			int typecode = akBaseItem.getType()
-			
-			if typecode == 26  ; armor
-				Armor _armor = akBaseItem as Armor 
-
-				if _armor.IsClothingBody() || _armor.IsCuirass()
-					Armor _wornArmor = _actor.GetWornForm(0x00000004) as Armor
-					if _wornArmor == None
-						_actor.EquipItem(_armor)
-						Debug.SendAnimationEvent(_actor, "IdleForceDefaultState")
-					endif				
-				endif
-			endif 
-	endif
 EndEvent
-
-bool function isAliveHuman(Actor _actor)
-	return !_actor.isDead() && _actor.HasKeyWordString("ActorTypeNPC") && _actor != Game.getPlayer()
-endFunction
 
 ; Event received when an item is removed from this object's inventory. If the item is a persistant reference, akItemReference
 ; will point at it - otherwise the parameter will be None
