@@ -508,26 +508,6 @@ int function GetCumID(int Position, int Stage = 1)
 	return FlagsArray(Position)[FlagIndex(Stage, kCumID)]
 endFunction
 
-bool function GetCollisionUse(int Position, int Stage)
-	return FlagsArray(Position)[FlagIndex(Stage, kCollisionUse)] as bool
-endFunction
-
-int function GetCollisionType(int Position, int Stage)
-	return FlagsArray(Position)[FlagIndex(Stage, kCollisionType)] 
-endFunction
-
-bool function GetCollisionStrong(int Position, int Stage)
-	return FlagsArray(Position)[FlagIndex(Stage, kCollisionStrong)] as bool
-endFunction
-
-int function GetCollisionStartTime(int Position, int Stage)
-	return FlagsArray(Position)[FlagIndex(Stage, kCollisionStartTime)]
-endFunction
-
-int function GetCollisionRepeatTime(int Position, int Stage)
-	return FlagsArray(Position)[FlagIndex(Stage, kCollisionRepeatTime)]
-endFunction
-
 int function GetCumSource(int Position, int Stage = 1)
 	return FlagsArray(Position)[FlagIndex(Stage, kCumSrc)]
 endFunction
@@ -738,12 +718,8 @@ int function AddCreaturePosition(string RaceKey, int Gender = 2, int AddCum = -1
 
 	return pid
 endFunction
-; collisionUse     0: no, 1: yes
-; collisionType vp(0)/vf(1)/ap(2)/af(3)/mp(4)/mf(5)/hit(6)
-; collisionStrong  0: weak, 1: normal, 2: strong
-; collisionStartTime 
-; collisionRepeatTime
-function AddPositionStage(int Position, string AnimationEvent, float forward = 0.0, float side = 0.0, float up = 0.0, float rotate = 0.0, bool silent = false, bool openMouth = false, bool strapon = true, int sos = 0, int collisionUse = 0, int collisionType = 0, int collisionStrong = 0, int collisionStartTime = 1000, int collisionRepeatTime = 2000)
+
+function AddPositionStage(int Position, string AnimationEvent, float forward = 0.0, float side = 0.0, float up = 0.0, float rotate = 0.0, bool silent = false, bool openmouth = false, bool strapon = true, int sos = 0)
 	; Out of range position or empty animation event
 	if Position == -1 || Position >= 5 || AnimationEvent == ""
 		Log("FATAL: Invalid arguments!", "AddPositionStage("+Position+", "+AnimationEvent+")")
@@ -779,16 +755,11 @@ function AddPositionStage(int Position, string AnimationEvent, float forward = 0
 	; Save position flags
 	int[] Flags = FlagsArray(Position)
 	Flags[fid + 0] = silent as int
-	Flags[fid + 1] = openMouth as int
+	Flags[fid + 1] = openmouth as int
 	Flags[fid + 2] = strapon as int
 	Flags[fid + 3] = sos
 	Flags[fid + 4] = Flags[kCumID]
-	Flags[fid + 5] = -1	
-	Flags[fid + 6] = collisionUse
-	Flags[fid + 7] = collisionType
-	Flags[fid + 8] = collisionStrong
-	Flags[fid + 9] = collisionStartTime
-	Flags[fid + 10] = collisionRepeatTime
+	Flags[fid + 5] = -1
 	fid += kFlagEnd
 
 	; Save position offsets
@@ -1063,14 +1034,9 @@ int property kStrapon   = 2 autoreadonly hidden
 int property kSchlong   = 3 autoreadonly hidden
 int property kCumID     = 4 autoreadonly hidden
 int property kCumSrc    = 5 autoreadonly hidden
-int property kCollisionUse    		= 6 autoreadonly hidden
-int property kCollisionType    		= 7 autoreadonly hidden
-int property kCollisionStrong    	= 8 autoreadonly hidden
-int property kCollisionStartTime    = 9 autoreadonly hidden
-int property kCollisionRepeatTime   = 10 autoreadonly hidden
 int property kFlagEnd hidden
 	int function get()
-		return 10
+		return 6
 	endFunction
 endProperty
 

@@ -34,21 +34,18 @@ bool property Creature hidden
 	endFunction
 endProperty
 
-function PlayMoan(Actor ActorRef, int enjoyment = 30, bool IsVictim = false, bool UseLipSync = false)
-
-	Sound SoundRef = GetSound(enjoyment, IsVictim)
-
+function PlayMoan(Actor ActorRef, int Strength = 30, bool IsVictim = false, bool UseLipSync = false, float volume = 1.0)
+	Sound SoundRef = GetSound(Strength, IsVictim)
 	if SoundRef
 		if !UseLipSync
-
-			SoundRef.Play(ActorRef)
+			Sound.SetInstanceVolume(SoundRef.Play(ActorRef), volume)
 			Utility.WaitMenuMode(0.4)
 		else
 			float SavedP = sslBaseExpression.GetPhoneme(ActorRef, 1)
 			; MfgConsoleFunc.SetPhonemeModifier(ActorRef, 0, 1, 20)
 			ActorRef.SetExpressionPhoneme(1, 0.2)
 			Utility.WaitMenuMode(0.1)
-			SoundRef.Play(ActorRef)
+			Sound.SetInstanceVolume(SoundRef.Play(ActorRef), volume)
 			TransitUp(ActorRef, 20, 50)
 			Utility.WaitMenuMode(0.2)
 			TransitDown(ActorRef, 50, 20)
@@ -59,81 +56,30 @@ function PlayMoan(Actor ActorRef, int enjoyment = 30, bool IsVictim = false, boo
 	endIf
 endFunction
 
-function Moan(Actor ActorRef, int enjoyment = 30, bool IsVictim = false)
-	PlayMoan(ActorRef, enjoyment, Isvictim, Config.UseLipSync)
+function Moan(Actor ActorRef, int Strength = 30, bool IsVictim = false)
+	PlayMoan(ActorRef, Strength, Isvictim, Config.UseLipSync)
 endFunction
 
-function MoanNoWait(Actor ActorRef, int enjoyment = 30, bool IsVictim = false, float Volume = 1.0)
+function MoanNoWait(Actor ActorRef, int Strength = 30, bool IsVictim = false, float Volume = 1.0)
 	if Volume > 0.0
-		Sound SoundRef = GetSound(enjoyment, IsVictim)
+		Sound SoundRef = GetSound(Strength, IsVictim)
 		if SoundRef
-			LipSync(ActorRef, enjoyment)
+			LipSync(ActorRef, Strength)
 			Sound.SetInstanceVolume(SoundRef.Play(ActorRef), Volume)
 		endIf
 	endIf
 endFunction
 
-Sound function GetSound(int enjoyment, bool IsVictim = false)
-	if IsVictim 
-		if Gender == 0; male
-			if enjoyment == 100
-				return Hot
-			elseIf enjoyment > 80 && Hot
-				return Hot
-			elseIf enjoyment > 60 && enjoyment < 80
-				return Medium
-			else 
-				return Mild
-			endIf
-		elseif Gender == 1; female
-			if enjoyment == 100
-				return Hot
-			elseif enjoyment > 90 && Hot
-				return Hot
-			elseIf enjoyment > 60 && enjoyment < 90
-				return Medium
-			elseIf enjoyment > 50 && enjoyment < 60
-				return Mild				
-			else 
-				return Mild
-			endIf
-		else ; creature
-			if enjoyment == 100
-				return Hot
-			elseif enjoyment > 80 && Hot
-				return Hot
-			elseIf enjoyment > 40 && enjoyment < 80
-				return Medium
-			else 
-				return Mild
-			endif
-		endif
-	else
-		if Gender == 0 || Gender == 1; human
-			if enjoyment == 100
-				return Hot			
-			elseif enjoyment > 80 && Hot
-				return Hot
-			elseIf enjoyment > 50 && enjoyment < 80
-				return Medium
-			else 
-				return Mild
-			endIf
-		else ; creature
-			if enjoyment == 100
-				return Hot			
-			elseif enjoyment > 80 && Hot
-				return Hot
-			elseIf enjoyment > 40 && enjoyment < 80
-				return Medium
-			else 
-				return Mild
-			endif
-		endif
-	endif
+Sound function GetSound(int Strength, bool IsVictim = false)
+	if Strength > 75 && Hot
+		return Hot
+	elseIf IsVictim && Medium
+		return Medium
+	endIf
+	return Mild
 endFunction
 
-function LipSync(Actor ActorRef, int enjoyment, bool ForceUse = false)
+function LipSync(Actor ActorRef, int Strength, bool ForceUse = false)
 	if (ForceUse || Config.UseLipSync) && Game.GetCameraState() != 3
 		ActorRef.Say(LipSync)
 	endIf

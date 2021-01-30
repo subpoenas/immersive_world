@@ -285,6 +285,8 @@ Form[] function StripSlots(Actor ActorRef, bool[] Strip, bool DoAnimate = false,
 	endIf
 	int Gender = ActorRef.GetLeveledActorBase().GetSex()
 	; Start stripping animation
+	Debug.Notification("StripSlots")
+
 	if DoAnimate
 		Debug.SendAnimationEvent(ActorRef, "Arrok_Undress_G"+Gender)
 	endIf

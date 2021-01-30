@@ -10,6 +10,11 @@ Sound Property HitSoundRes  Auto
 SexLabFramework property SexLab auto
 
 Actor[] actorList = none
+Sound[] etcSounds = none
+Sound[] shockFSounds = none
+Sound[] shameFSounds = none 
+Sound[] cryFSounds = none
+
 bool[] actorVictimList = none
 sslThreadController sslController = none
 float sfxBedVolume = 0.1
@@ -20,88 +25,154 @@ event OnInit()
     RegisterForModEvent("AnimationStart", "Begin")
 	RegisterForModEvent("StageStart", "Stage")
     RegisterForModEvent("AnimationEnd", "Done") 
+
+    init()
 endEvent
 
-Sound function getTearSound() 
-    return Game.GetFormFromFile(0x334A9, "Skyrim.esm") As Sound
+function init()
+    if etcSounds == none 
+
+        etcSounds[0] = Game.GetFormFromFile(0x334A9, "Skyrim.esm") As Sound ; clothe tear sound
+        etcSounds[1] = Game.GetFormFromFile(0x334A9, "Skyrim.esm") As Sound ; bed squeak sound 
+        etcSounds[2] = Game.GetFormFromFile(0x334A9, "Skyrim.esm") As Sound ; fist hit sound 
+
+        ; shocking sound	
+                shockFSounds = new Sound[9]
+                shockFSounds[0] =  (Game.GetFormFromFile(0x06014C0D, "AltonImmersiveSound.esp") As Sound) ; Player	
+                shockFSounds[1] =  (Game.GetFormFromFile(0x0602E13A, "AltonImmersiveSound.esp") As Sound) ; Teen		
+                shockFSounds[2] =  (Game.GetFormFromFile(0x06014C0D, "AltonImmersiveSound.esp") As Sound) ; Young
+                shockFSounds[3] =  (Game.GetFormFromFile(0x0603836B, "AltonImmersiveSound.esp") As Sound) ; Coward, Sultry, Shrill, Con
+                shockFSounds[4] =  (Game.GetFormFromFile(0x06038372, "AltonImmersiveSound.esp") As Sound) ; Evan, Elf, Commander
+                shockFSounds[5] =  (Game.GetFormFromFile(0x0602E144, "AltonImmersiveSound.esp") As Sound) ; Old
+                shockFSounds[6] =  (Game.GetFormFromFile(0x0602E144, "AltonImmersiveSound.esp") As Sound) ; Orc
+                shockFSounds[7] =  (Game.GetFormFromFile(0x0602E144, "AltonImmersiveSound.esp") As Sound) ; Khajit
+                shockFSounds[8] =  (Game.GetFormFromFile(0x0602E144, "AltonImmersiveSound.esp") As Sound) ; Argonian
+
+        ; shame sound
+                shameFSounds = new Sound[9]
+                shameFSounds[0] =  (Game.GetFormFromFile(0x06014C0C, "AltonImmersiveSound.esp") As Sound)							
+                shameFSounds[1] =  (Game.GetFormFromFile(0x0602E139, "AltonImmersiveSound.esp") As Sound)		
+                shameFSounds[2] =  (Game.GetFormFromFile(0x06014C0C, "AltonImmersiveSound.esp") As Sound)		
+                shameFSounds[3] =  (Game.GetFormFromFile(0x0603836A, "AltonImmersiveSound.esp") As Sound)															
+                shameFSounds[4] =  (Game.GetFormFromFile(0x06038371, "AltonImmersiveSound.esp") As Sound)	; Evan																					
+                shameFSounds[5] =  (Game.GetFormFromFile(0x0602E143, "AltonImmersiveSound.esp") As Sound)		
+                shameFSounds[6] =  (Game.GetFormFromFile(0x0602E143, "AltonImmersiveSound.esp") As Sound)
+                shameFSounds[8] =  (Game.GetFormFromFile(0x0602E143, "AltonImmersiveSound.esp") As Sound)
+                                                          
+
+        ; cry sound
+                cryFSounds = new Sound[9]
+                cryFSounds[0] =  (Game.GetFormFromFile(0x06014C0A, "AltonImmersiveSound.esp") As Sound)					
+                cryFSounds[1] =  (Game.GetFormFromFile(0x0602E137, "AltonImmersiveSound.esp") As Sound)
+                cryFSounds[2] =  (Game.GetFormFromFile(0x06014C0A, "AltonImmersiveSound.esp") As Sound)
+                cryFSounds[3] =  (Game.GetFormFromFile(0x06038368, "AltonImmersiveSound.esp") As Sound)													
+                cryFSounds[4] =  (Game.GetFormFromFile(0x0603836F, "AltonImmersiveSound.esp") As Sound)		; Evan														
+                cryFSounds[5] =  (Game.GetFormFromFile(0x0602E141, "AltonImmersiveSound.esp") As Sound)
+                cryFSounds[6] =  (Game.GetFormFromFile(0x0602E141, "AltonImmersiveSound.esp") As Sound)					
+                cryFSounds[8] =  (Game.GetFormFromFile(0x0602E141, "AltonImmersiveSound.esp") As Sound)	
+    endif 
 endfunction
 
-Sound function getShockSound(bool _isFemale, string _voiceType) 
-    Sound _sound = none
-    if _isFemale == true
-        if _voiceType == "Player"		
-            _sound =  (Game.GetFormFromFile(0x06014C0D, "AltonImmersiveSound.esp") As Sound)					
-        elseif _voiceType == "Teen"		
-            _sound =  (Game.GetFormFromFile(0x0602E13A, "AltonImmersiveSound.esp") As Sound)
-        elseif _voiceType == "Young"		
-            _sound =  (Game.GetFormFromFile(0x06014C0D, "AltonImmersiveSound.esp") As Sound)
-        elseif _voiceType == "Coward"		
-            _sound =  (Game.GetFormFromFile(0x0603836B, "AltonImmersiveSound.esp") As Sound)													
-        elseif _voiceType == "Evan"		
-            _sound =  (Game.GetFormFromFile(0x06038372, "AltonImmersiveSound.esp") As Sound)						
-        elseif _voiceType == "Sultry" || _voiceType == "Shrill" || _voiceType == "Con"		
-            _sound =  (Game.GetFormFromFile(0x06038366, "AltonImmersiveSound.esp") As Sound)												
-        elseif _voiceType == "Old"		
-            _sound =  (Game.GetFormFromFile(0x0602E144, "AltonImmersiveSound.esp") As Sound)
-        else		
-            _sound =  (Game.GetFormFromFile(0x0602E13F, "AltonImmersiveSound.esp") As Sound)						
-        endif
-    endif
+function playShockSound(actor _actor, int _idx, float _volume)     
+    int gender = _actor.GetActorBase().getSex()
 
-    return _sound
-endfunction 
+    if gender == 1 ; female
+        Sound.SetInstanceVolume(shockFSounds[_idx].Play(_actor), _volume)
+    endif 
+endfunction
+
+function playShameSound(actor _actor, int _idx, float _volume) 
+    int gender = _actor.GetActorBase().getSex()
+
+    if gender == 1 ; female
+        Sound.SetInstanceVolume(shameFSounds[_idx].Play(_actor), _volume)
+    endif 
+endfunction
+
+function playCrySound(actor _actor, int _idx, float _volume) 
+    int gender = _actor.GetActorBase().getSex()
+
+    if gender == 1 ; female
+        Sound.SetInstanceVolume(cryFSounds[_idx].Play(_actor), _volume)
+    endif 
+endfunction
+
+function playTearSound(actor _actor, float _volume) 
+    Sound.SetInstanceVolume(etcSounds[0].Play(_actor), _volume)
+endfunction
 
 
-Sound function getShameSound(bool _isFemale, string _voiceType) 
-    Sound _sound = none
-    if _isFemale == true
-        if _voiceType == "Player"
-            _sound =  (Game.GetFormFromFile(0x06014C0C, "AltonImmersiveSound.esp") As Sound)							
-        elseif _voiceType == "Teen"
-            _sound =  (Game.GetFormFromFile(0x0602E139, "AltonImmersiveSound.esp") As Sound)		
-        elseif _voiceType == "Young"
-            _sound =  (Game.GetFormFromFile(0x06014C0C, "AltonImmersiveSound.esp") As Sound)		
-        elseif _voiceType == "Coward"
-            _sound =  (Game.GetFormFromFile(0x0603836A, "AltonImmersiveSound.esp") As Sound)															
-        elseif _voiceType == "Evan"
-            _sound =  (Game.GetFormFromFile(0x06038371, "AltonImmersiveSound.esp") As Sound)								
-        elseif _voiceType == "Sultry" || _voiceType == "Shrill" || _voiceType == "Con"
-            _sound =  (Game.GetFormFromFile(0x06038365, "AltonImmersiveSound.esp") As Sound)														
-        elseif _voiceType == "Old"
-            _sound =  (Game.GetFormFromFile(0x0602E143, "AltonImmersiveSound.esp") As Sound)		
-        else
-            _sound =  (Game.GetFormFromFile(0x0602E13E, "AltonImmersiveSound.esp") As Sound)								
-        endif
-    endif
+int function getVoiceTypeIdx(actor _actor)
 
-    return _sound
-endfunction 
+    init()
 
-Sound function getFaintSound(bool _isFemale, string _voiceType) 
-    Sound _sound = none
-    if _isFemale == true
-        if _voiceType == "Player"
-            _sound =  (Game.GetFormFromFile(0x06014C0A, "AltonImmersiveSound.esp") As Sound)					
-        elseif _voiceType == "Teen"
-            _sound =  (Game.GetFormFromFile(0x0602E137, "AltonImmersiveSound.esp") As Sound)
-        elseif _voiceType == "Young"
-            _sound =  (Game.GetFormFromFile(0x06014C0A, "AltonImmersiveSound.esp") As Sound)
-        elseif _voiceType == "Coward"
-            _sound =  (Game.GetFormFromFile(0x06038368, "AltonImmersiveSound.esp") As Sound)													
-        elseif _voiceType == "Evan"
-            _sound =  (Game.GetFormFromFile(0x0603836F, "AltonImmersiveSound.esp") As Sound)						
-        elseif _voiceType == "Sultry" || _voiceType == "Shrill" || _voiceType == "Con"
-            _sound =  (Game.GetFormFromFile(0x06038363, "AltonImmersiveSound.esp") As Sound)												
-        elseif _voiceType == "Old"
-            _sound =  (Game.GetFormFromFile(0x0602E141, "AltonImmersiveSound.esp") As Sound)
-        else
-            _sound =  (Game.GetFormFromFile(0x0602E13C, "AltonImmersiveSound.esp") As Sound)					
-        endif
-    endif
+	int vType = 0
+	ActorBase actBase = _actor.GetBaseObject() as ActorBase    
+	VoiceType actVoiceType = actBase.GetVoiceType()
+    int formId= actVoiceType.GetFormID()
+    int gender = _actor.GetActorBase().getSex()
 
-    return _sound
-endfunction 
+    if gender == 1 
+        ; female   
+		if _actor == Game.GetPlayer()
+			vType = 0
 
+		elseif formId == 0x13AE9 ;Teen
+			vType = 1
+
+		elseif formId == 0x13ADC ;young
+            vType = 2
+            
+		elseif formId == 0x13AE5 ;coward
+			vType = 3        
+
+		elseif formId == 0x13AE0 ;sultry
+            vType = 3
+
+		elseif formId == 0x13BC3 ;shrill
+            vType = 3  
+
+		elseif formId == 0x13AE4 ;con
+			vType = 3            
+                        
+		elseif formId == 0x13ADD ;even
+            vType = 4                       
+
+		elseif formId == 0x13AF3 || formId == 0x13Af1 ; elf
+			vType = 4
+
+		elseif formId == 0x13AE3 ;commander
+            vType = 4               
+            
+		elseif formId == 0x1B560 ;solder
+			vType = 4              
+		
+		elseif formId == 0x13AE1 || formId == 0x13AE2 ; old
+			vType = 5 
+
+		elseif formId == 0x13AE8 ; orc
+			vType = 6
+
+		elseif formId == 0x13AED ; Khajit
+			vType = 7
+
+		elseif formId == 0x13AE9 ; Argonian
+            vType = 8                   
+			
+		else 
+			vType = 3
+        endif  
+        
+    else 
+        ; male
+        vType = 1
+	endif        
+
+	return vType
+endFunction
+
+
+; sexlab support
 event Begin(string eventName, string argString, float argNum, form sender)
 
     sslBaseAnimation anim = SexLab.HookAnimation(argString)
@@ -143,7 +214,7 @@ event Begin(string eventName, string argString, float argNum, form sender)
             idx += 1
 
             ; 목소리 선택
-            selectVoiceType(_actor, gender)
+            setSexlabVoiceType(_actor, gender)
     endWhile
 endEvent
 
@@ -185,11 +256,12 @@ event Stage(string eventName, string argString, float argNum, form sender)
 endevent
 
 
-String function selectVoiceType(actor _actor, int _gender)
+String function setSexlabVoiceType(actor _actor, int _gender)
 	String vType = None
 	ActorBase actBase = _actor.GetBaseObject() as ActorBase    
 	VoiceType actVoiceType = actBase.GetVoiceType()
-	int formId= actVoiceType.GetFormID()
+    int formId= actVoiceType.GetFormID()
+    int gender = _actor.GetActorBase().getSex()
 
 	; if _gender == 0 ; male   					
 	; 	if formId == 0x13AE8
@@ -216,52 +288,68 @@ String function selectVoiceType(actor _actor, int _gender)
 	; endif
 
 	if _gender == 1 ; female   
-		if _actor == Game.GetPlayer()
+        if _actor == Game.GetPlayer()
+            SexLab.GetVoiceBySlot(0)
 			vType = "Player"
 
-		elseif formId == 0x13AE9 ;Teen
+        elseif formId == 0x13AE9 ;Teen
+            SexLab.GetVoiceBySlot(1)
 			vType = "Teen"
 
-		elseif formId == 0x13ADC ;young
+        elseif formId == 0x13ADC ;young
+            SexLab.GetVoiceBySlot(2)
 			vType = "Young"
 
-		elseif formId == 0x13AE3 ;commander
+        elseif formId == 0x13AE3 ;commander
+            SexLab.GetVoiceBySlot(3)
 			vType = "Commander"                
 
-		elseif formId == 0x13AE5 ;coward
-			vType = "Coward"                    
-			
-		elseif formId == 0x1B560 ;solder
-			vType = "Solder"                  
+        elseif formId == 0x1B560 ;solder
+            SexLab.GetVoiceBySlot(3)
+            vType = "Solder"   
 
-		elseif formId == 0x13BC3 ;shrill
-			vType = "Shrill"   
-
-		elseif formId == 0x13AE0 ;sultry
-			vType = "Sultry"    
-
-		elseif formId == 0x13AE4 ;con
-			vType = "Con"    
-
-		elseif formId == 0x13ADD ;even
+        elseif formId == 0x13ADD ;even
+            SexLab.GetVoiceBySlot(4)
 			vType = "Evan" 			
 
-		elseif formId == 0x13AE1 || formId == 0x13AE2 ; old
+        elseif formId == 0x13AF3 || formId == 0x13Af1 ; elf
+            SexLab.GetVoiceBySlot(4)
+            vType = "Elf"
+                        
+        elseif formId == 0x13AE5 ;coward
+            SexLab.GetVoiceBySlot(5)
+			vType = "Coward"                    			               
+
+        elseif formId == 0x13BC3 ;shrill
+            SexLab.GetVoiceBySlot(6)
+			vType = "Shrill"   
+
+        elseif formId == 0x13AE0 ;sultry
+            SexLab.GetVoiceBySlot(6)
+			vType = "Sultry"    
+
+        elseif formId == 0x13AE4 ;con
+            SexLab.GetVoiceBySlot(6)
+			vType = "Con"    
+
+        elseif formId == 0x13AE1 || formId == 0x13AE2 ; old
+            SexLab.GetVoiceBySlot(7)
 			vType = "Old"   
 
-		elseif formId == 0x13AF3 || formId == 0x13Af1 ; elf
-			vType = "Elf"
-
-		elseif formId == 0x13AE8 ; orc
+        elseif formId == 0x13AE8 ; orc
+            SexLab.GetVoiceBySlot(8)
 			vType = "Orc"
 
-		elseif formId == 0x13AED ; Khajit
+        elseif formId == 0x13AED ; Khajit
+            SexLab.GetVoiceBySlot(9)
 			vType = "Khajit"  
 
-		elseif formId == 0x13AE9 ; Argonian
+        elseif formId == 0x13AE9 ; Argonian
+            SexLab.GetVoiceBySlot(10)
 			vType = "Argonian"                             
 			
-		else 
+        else 
+            SexLab.GetVoiceBySlot(6)
 			vType = "Common"
 		endif  
 	endif        
@@ -269,146 +357,14 @@ String function selectVoiceType(actor _actor, int _gender)
 	return vType
 endFunction
 
-; function selectVoice()
-
-;     int numOfActor = actorList.length
-;     int idx=0
-        
-;     while idx < numOfActor  
-    
-;         Actor _actor = actorList[idx]
-;         int gender = Sexlab.GetGender(_actor)
-;         string vType = "none"
-;         ; voice type
-;         ActorBase actBase = _actor.GetBaseObject() as ActorBase    
-;         VoiceType actVoiceType = actBase.GetVoiceType()
-;         int formId= actVoiceType.GetFormID()
-
-;         if gender == 0 ; male   
-;             sslBaseVoice voice = SexLab.GetVoiceBySlot(9) ; young
-                        
-;             if Player == _actor ; player
-;                 SexLab.GetVoiceBySlot(0)
-;                 vType = "Player"            
-;             elseif formId == 0x13AE8
-;                 voice = SexLab.GetVoiceBySlot(12)
-;                 vType = "Child"            
-;             elseif formId == 0x13AD1
-;                 voice = SexLab.GetVoiceBySlot(12)
-;                 vType = "Young"
-;             elseif formId == 0x13AD8
-;                 voice = SexLab.GetVoiceBySlot(14)                             
-;                 vType = "Commander"                
-;             elseif formId == 0x13ADA
-;                 voice = SexLab.GetVoiceBySlot(14)                       
-;                 vType = "Brute"       
-;             elseif formId == 0x13AD6 ||  formId == 0x13AD7
-;                 voice = SexLab.GetVoiceBySlot(13)                       
-;                 vType = "Old"                 
-;             elseif formId == 0x13AEC
-;                 voice = SexLab.GetVoiceBySlot(15)                       
-;                 vType = "Khajit"     
-;             elseif formId == 0x13AEA
-;                 voice = SexLab.GetVoiceBySlot(15)                       
-;                 vType = "Orc"    
-;             elseif formId == 0x13AEE
-;                 voice = SexLab.GetVoiceBySlot(15)                       
-;                 vType = "Argonian"                                                                        
-;             else                             
-;                 voice = SexLab.GetVoiceBySlot(12)
-;                 vType = "Common"
-;             endif
-                    
-;             sslController.SetVoice(_actor, voice) 
-;             Debug.Notification("maleVoice = " + vType)           
-;         endif
-    
-;         if gender == 1 ; female   
-;             sslBaseVoice voice = SexLab.GetVoiceBySlot(2) ; young
-
-;             if Player == _actor ; player
-;                 voice = SexLab.GetVoiceBySlot(0)
-;                 vType = "Player"
-;             elseif formId == 0x13AE9 ;child
-;                 voice = SexLab.GetVoiceBySlot(8)
-;                 vType = "Teen"
-;             elseif formId == 0x13ADC ;young
-;                 voice = SexLab.GetVoiceBySlot(2)
-;                 vType = "Young"
-;             elseif formId == 0x13AE3 ;commander
-;                 voice = SexLab.GetVoiceBySlot(5)
-;                 vType = "Commander"                
-;             elseif formId == 0x13AE5 ;coward
-;                 voice = SexLab.GetVoiceBySlot(4)
-;                 vType = "Coward"                    
-;             elseif formId == 0x1B560 ;solder
-;                 voice = SexLab.GetVoiceBySlot(5)
-;                 vType = "Solder"
-;             elseif formId == 0x13BC3 ;shrill
-;                 voice = SexLab.GetVoiceBySlot(3)
-;                 vType = "Shrill"   
-;             elseif formId == 0x13AE0 ;sultry
-;                 voice = SexLab.GetVoiceBySlot(3)
-;                 vType = "Sultry"    
-;             elseif formId == 0x13AE4 ;con
-;                 voice = SexLab.GetVoiceBySlot(1)
-;                 vType = "Con"    
-;             elseif formId == 0x13ADD ;even
-;                 voice = SexLab.GetVoiceBySlot(1)
-;                 vType = "Evan" 			
-;             elseif formId == 0x13AE1 || formId == 0x13AE2 ; old
-;                 voice = SexLab.GetVoiceBySlot(7) 
-;                 vType = "Old"   
-;             elseif formId == 0x13AF3 || formId == 0x13Af1 ; elf
-;                 voice = SexLab.GetVoiceBySlot(2)
-;                 vType = "Elf"
-;             elseif formId == 0x13AE8 ; orc
-;                 voice = SexLab.GetVoiceBySlot(9) 
-;                 vType = "Orc"
-;             elseif formId == 0x13AED ; Khajit
-;                 voice = SexLab.GetVoiceBySlot(11) 
-;                 vType = "Khajit"  
-;             elseif formId == 0x13AE9 ; Argonian
-;                 voice = SexLab.GetVoiceBySlot(10) 
-;                 vType = "Argonian"
-;             else 
-;                 voice = SexLab.GetVoiceBySlot(6) 
-;                 vType = "Common"
-;             endif
-            
-;             sslController.SetVoice(_actor, voice)           
-;             Debug.Notification("femaleVoice = " + vType)      
-;         endif        
-
-;         idx += 1
-
-;     endWhile
-; endFunction
-
-; function getSoundType(int collisionType)    
-;     ;vp(0)/vf(1)/ap(2)/af(3)/mp(4)/mf(5)/hit(6)
-;     if collisionType == 0     ; vargina + penis
-;         return SquirshSoundRes
-;     elseif collisionType == 1 ; vargina + finger
-;         return SquirshSoundRes
-;     elseif collisionType == 2 ; ass + penis
-;         return SquirshSoundRes
-;     elseif collisionType == 3 ; ass + finger
-;         return BlowJobSoundRes
-;     elseif collisionType == 2 ; mouse + penis
-;         return BlowJobSoundRes
-;     elseif collisionType == 2 ; mouse + finger
-;         return HitSoundRes
-;     endif 
-
-;     Sound.SetInstanceVolume(soundInfo.Play(_actor), volumn)
-; endFunction
 
 function playSfxSound(actor _actor, Sound soundInfo)    
     
     int volumn = 1
 
     if isFurnitureSfx 
+        Sound.SetInstanceVolume(FurnitureSoundRes.Play(_actor), volumn)
+    elseif isFistHitSfx
         Sound.SetInstanceVolume(FurnitureSoundRes.Play(_actor), volumn)
     endif
 
@@ -417,9 +373,7 @@ endFunction
 
 event Done(string eventName, string argString, float argNum, form sender)
     isFurnitureSfx = false
-    isBlowJobSfx = false
-    isSquirshSfx = false
-    isHitSfx = false
+    isFistHitSfx = false
 
     curStage = "foreplay"
     animName = "nothing"
@@ -434,9 +388,7 @@ string  animName = "nothing"
 string  curStage = "foreplay"  ; foreplay, play, orgasm, postplay
 
 bool    isFurnitureSfx = false
-bool    isBlowJobSfx = false
-bool    isSquirshSfx = false
-bool    isHitSfx = false
+bool    isFistHitSfx = false
 
 
 

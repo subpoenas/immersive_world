@@ -1,5 +1,7 @@
 Scriptname Actor extends ObjectReference Hidden
 
+Import Utility
+
 ; Relationship functions use the following values:
 ; 4 - Lover
 ; 3 - Ally
@@ -32,9 +34,9 @@ endFunction
 Function MakePlayerFriend()
 	ActorBase myBase = GetActorBase()
 	if myBase.IsUnique()
-		if GetRelationshipRank(Game.GetPlayer())== 0
+		if GetRelationshipRank(imsBridgeQuest.getPlayerActor()) == 0
 ; 			debug.trace(self + " MakePlayerFriend called on neutral actor - changed to FRIEND.")
-			SetRelationshipRank(Game.GetPlayer(), 1)
+			SetRelationshipRank(imsBridgeQuest.getPlayerActor(), 1)
 		else
 ; 			debug.trace(self + " MakePlayerFriend called on non-neutral actor - NO EFFECT.")
 		endif
@@ -452,7 +454,7 @@ Function ModAV(string asValueName, float afAmount)
   ModActorValue(asValueName, afAmount)
 EndFunction
 
-; Modifies this actor's rank in the faction
+; Modifies this actor's rank in the factionf
 Function ModFactionRank(Faction akFaction, int aiMod) native
 
 ; Pop this actor to the initial location for a package. Mainly for use on 
@@ -717,8 +719,14 @@ Function DrawWeapon() native
 ; 0 - not in combat
 ; 1 - in combat
 ; 2 - searching
+
+int previousCombatState = 0 ; alton added
 Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
-	init()
+	Debug.Notification("OnCombatStateChanged")
+	if aeCombatState == 0 && previousCombatState == 1
+	endif
+
+	previousCombatState = aeCombatState	
 EndEvent
 
 ; Event that is triggered when this actor sits in the furniture
@@ -735,6 +743,7 @@ EndEvent
 
 ; Event that is triggered when this actor begins to die
 Event OnDying(Actor akKiller)
+	gotoState("dead")
 EndEvent
 
 ; Event received when an actor enters bleedout.
@@ -747,14 +756,6 @@ EndEvent
 
 ; Received when the lycanthropy state of this actor changes (when SendLycanthropyStateChanged is called)
 Event OnLycanthropyStateChanged(bool abIsWerewolf)
-EndEvent
-
-; Event received when this actor equips something - akReference may be None if object is not persistent
-Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
-EndEvent
-
-; Event received when this actor unequips something - akReference may be None if object is not persistent
-Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 EndEvent
 
 ; Event received when this actor starts a new package
@@ -778,6 +779,13 @@ EndEvent
 Event OnPlayerBowShot(Weapon akWeapon, Ammo akAmmo, float afPower, bool abSunGazing)
 EndEvent
 
+; Event received when this actor equips something - akReference may be None if object is not persistent
+Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
+EndEvent
+
+; Event received when this actor unequips something - akReference may be None if object is not persistent
+Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
+EndEvent
 
 ; Received immediately after the player has loaded a save game. A good time to check for additional content.
 Event OnPlayerLoadGame()
@@ -980,35 +988,181 @@ Function ResetExpressionOverrides() native
 ; Returns all factions with the specified min and max ranks (-128 to 127) 
 Faction[] Function GetFactions(int minRank, int maxRank) native
 
-; Alston
-state alive
-	Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile, bool abPowerAttack, bool abSneakAttack, bool abBashAttack, bool abHitBlocked)
-				
-		; breakable armor
-		if  abPowerAttack || abBashAttack	
-			imsBridge.handleArmorBreak(self, akAggressor as actor, akSource as Weapon, abPowerAttack, abBashAttack )		
-		endif
-	EndEvent
-endState
 
-Event OnLoad()
-	init()
-EndEvent
+; Alton 
+ImmersiveBridgeScript imsBridgeQuest = None
+int actorVoiceType = 0
+bool isHuman = false
+bool preferNaked = false
+float actorNakedStartTime = 0.0
 
-ImmersiveBridge imsBridge = None
-bool isPreferedNakedHuman = false
 function init() 
+	if imsBridgeQuest == None
 
-	if imsBridge == None
 		if HasKeyWordString("ActorTypeNPC")
-			if !isDead()			
-				imsBridge =  (Game.GetFormFromFile(0x0600AA01, "AlstonImmersiveArmorBreak.esp") As ImmersiveBridge)						
-				
-				if imsBridge.isActorNaked(self) 
-					isPreferedNakedHuman = true
+			if isDead()
+				; Debug.Notification("dead human loaded " + isHuman + ", " + self.GetActorBase().getName())
+				gotoState("dead")
+			else 				
+				imsBridgeQuest =  (Game.GetFormFromFile(0x06060B12, "AltonImmersiveAnimation.esp") As ImmersiveBridgeScript)						
+				actorVoiceType = imsBridgeQuest.getVoiceTypeIdx(self)
+
+				isHuman = true
+				if imsBridgeQuest.isActorNaked(self) 
+					preferNaked = true
 				endif				
 				gotoState("alive")
 			endif 
 		endif
 	endif
 endfunction
+
+Event OnMagicEffectApply(ObjectReference akCaster, MagicEffect akEffect)
+	init()
+EndEvent
+
+Event OnLoad()
+	init()
+EndEvent
+
+Event OnUnload()
+EndEvent
+
+float Function getNakedStartTime()
+	return actorNakedStartTime
+EndFunction
+
+Function sayWarningComment(actor _victim)	
+	; assault comment by viewer
+	SetLookAt(_victim)
+	;say(imsBridgeQuest.getNakedTopic(), imsBridgeQuest.getPlayerActor(), true) ; say target should be player not real victim	
+EndFunction
+
+Function doSayToVictim(actor _victim)	
+	; assault comment by viewer
+	SetLookAt(_victim)	
+	wait(1.0)
+
+	if 	GetActorBase().GetSex() == 1 ; female
+		if  Utility.RandomInt(1,10)	 < 7
+			; say(imsBridgeQuest.getNakedTopic(), imsBridgeQuest.getPlayerActor(), true) ; say target should be player not real victim
+			imsBridgeQuest.playHideFaceAnimation(self)
+			_victim.doReactionToAggressor()
+		endif
+	endif
+	;say(imsBridgeQuest.getNakedTopic(), imsBridgeQuest.getPlayerActor(), true) ; say target should be player not real victim	
+EndFunction
+
+Function doReactionToAggressor()
+	Debug.Notification("player topic")
+	imsBridgeQuest.playNakeCoverAnimation(self)
+	; if self == imsBridgeQuest.getPlayerActor()
+	; 	say(imsBridgeQuest.getNakedPlayerSelfTopic(), self, true) ; say target should be player not real victim	
+	; endif
+EndFunction
+
+state dead
+	Event OnItemRemoved(Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akDestContainer)
+		; play jiggling on dead animation
+		if akBaseItem.GetType() == 26
+			Armor _armor = akBaseItem as Armor
+
+			if _armor.IsClothing() || _armor.IsClothingBody() 
+				PushActorAway(self, 0.75)
+			endif
+		endif
+
+		if GetNumItems() == 0 && ! getActorBase().IsUnique()
+			DeleteWhenAble()
+		endif	
+	EndEvent
+endState
+
+state alive
+
+	Event OnLocationChange(Location akOldLoc, Location akNewLoc)
+		if imsBridgeQuest.isActorNaked(self)
+			imsBridgeQuest.registerForInteresingItem(self, self)
+		endif
+	EndEvent
+
+	Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile, bool abPowerAttack, bool abSneakAttack, bool abBashAttack, bool abHitBlocked)
+			
+		; breakable armor
+		if  abPowerAttack || abBashAttack	
+			imsBridgeQuest.handleArmorBreak(self, akAggressor as actor, akSource as Weapon, abPowerAttack, abBashAttack, actorVoiceType )		
+		endif 	
+	EndEvent
+
+	Event OnMagicEffectApply(ObjectReference akCaster, MagicEffect akEffect)
+		actor _actor = akCaster as actor
+
+		if akEffect.HasKeywordString("AltonMagicNakedAlert")
+			Debug.Notification("AltonMagicNakedAlert by " + _actor.GetActorBase().GetName() + " to " + GetActorBase().GetName())
+		elseif akEffect.HasKeywordString("AltonMagicDropArmorAlert")
+
+			if imsBridgeQuest.isActorNaked(self)
+				imsBridgeQuest.doSearchArmorPackage(self)
+			endif
+		endif
+	EndEvent
+
+	Event OnItemAdded(Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akSourceContainer)
+
+		if !isDead()
+			if akBaseItem.getType() == 26  ; armor
+				Armor _armor = akBaseItem as Armor			
+				if !imsBridgeQuest.checkWornItem(self, _armor)
+					imsBridgeQuest.playDressAnimation(self, _armor)
+				endif 						
+			endif 
+		endif
+	EndEvent
+
+	Event OnItemRemoved(Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akDestContainer)	
+
+		; when armor drop on the floor
+		if akItemReference != none && akBaseItem.getType() == 26		
+			imsBridgeQuest.getDropItemAlertSpell().cast(self)		
+		endif
+	EndEvent
+
+	Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)		
+
+		if !imsBridgeQuest.isActorNaked(self) 
+			if  GetCurrentPackage() == imsBridgeQuest.getFindArmorPackage() 
+				imsBridgeQuest.undoOverridePackages(self)	
+			endif
+		endif
+	EndEvent
+
+	Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
+
+		if imsBridgeQuest.isActorNaked(self)	; unequip armor
+
+			actorNakedStartTime = Utility.GetCurrentRealTime()		
+			imsBridgeQuest.registerForInteresingItem(self, self)
+		endif
+	EndEvent
+
+	; Event that is triggered when this actor begins to die
+	Event OnDying(Actor akKiller)
+		
+		if imsBridgeQuest.isAllHumanAvailable(self)
+			dropObject(GetEquippedWeapon())
+		endif
+
+		gotoState("dead")
+	EndEvent
+
+	; Event received when an actor enters bleedout.
+	Event OnEnterBleedout()
+		if GetActorBase().GetSex() == 1
+			int _rndint = Utility.RandomInt(1,10)	
+			
+			; if _rndint < 3
+			; 	doUnconscious(self, 1.0)
+			; endif
+		endif
+	EndEvent
+endState

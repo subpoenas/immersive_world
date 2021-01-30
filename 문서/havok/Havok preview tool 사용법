@@ -1,7 +1,0 @@
-Havok preview tool 사용법
-
-1) actor 를 선택하여 preview tool asset 에 등록
-	C:\Users\MSI\AppData\Local\ModOrganizer\SkyrimSE\mods\XP32 Maximum Skeleton Special Extended\meshes\actors\character\character assets female\skeleton_female.hkx
-
-2) actor 가 수행할 hkx 행위를 선택하여 preview tool asset 에 등록
-3) Hovk Compelete 영역에서 Ragdoll Mapping 을  Animation-> Ragdoll 로 변경
