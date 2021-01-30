@@ -295,7 +295,7 @@ function ArrokMaleMasturbation(int id)
 	Base.AddPositionStage(a1, "Arrok_MaleMasturbation_A1_S3", -55.0, sos = 3)
 	Base.AddPositionStage(a1, "Arrok_MaleMasturbation_A1_S4", -55.0, sos = 3)
 
-	Base.SetTags("Arrok,Sex,Solo,Penis,Hands,Masturbation,Standing,AirCum,Dirty")
+	Base.SetTags("Arrok,Sex,Solo,Penis,Hands,Masturbation,Standing,Dirty")
 
 	Base.Save(id)
 endFunction
@@ -828,7 +828,7 @@ function BleaghFemaleSolo(int id)
 	Base.AddPositionStage(a1, "Bleagh_FemaleSolo_A1_S4", -55.0)
 	Base.AddPositionStage(a1, "Bleagh_FemaleSolo_A1_S5", -55.0)
 
-	Base.SetTags("Bleagh,Sex,Solo,Pussy,Hands,Laying,Beds,Masturbation,Dirty")
+	Base.SetTags("Bleagh,Sex,Solo,Pussy,Hands,Laying,Beds,Masturbation,Dirty,Lesbian")
 
 	Base.Save(id)
 endFunction
@@ -1396,7 +1396,7 @@ function LeitoFemaleSolo(int id)
 
 	Base.SetStageTimer(5, 8.2)
 	
-	Base.SetTags("Leito,Solo,Pussy,Hands,Doggystyle,Kneeling,Masturbation,Dirty")
+	Base.SetTags("Leito,Solo,Pussy,Hands,Kneeling,Masturbation,Dirty,Lesbian")
 
 	Base.Save(id)
 endFunction

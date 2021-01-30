@@ -372,8 +372,6 @@ state Ready
 			; Strip actor
 			if ActorRef
 
-				actorRef.SetUnconscious(true)
-
 				actorAnimationArray = new String[128]
 				actorActionArray = new String[128]
 				actorSosArray = new String[128]
@@ -524,18 +522,6 @@ state Ready
 			GoToState("Prepare")
 			RegisterForSingleUpdate(0.1)
 		else
-			if actorActionArray[actorArrayIdx] == "undress"
-				runStrip()
-			endif
-						
-			if actorAnimationArray[actorArrayIdx] != ""		
-				Debug.SendAnimationEvent(actorRef, actorAnimationArray[actorArrayIdx])		
-			endif 
-	
-			if actorSosArray[actorArrayIdx] != ""
-				Debug.SendAnimationEvent(actorRef, actorSosArray[actorArrayIdx])
-			endif	
-
 			bool moveChanged = false
 
 			if actorForwardArray[actorArrayIdx] < 1000.0
@@ -560,6 +546,8 @@ state Ready
 				ActorRef.SetPosition(Loc[0], Loc[1], Loc[2])
 				ActorRef.SetAngle(Loc[3], Loc[4], Loc[5])
 				AttachMarker()
+
+				Debug.Notification("pos Change " + ", "+ Offsets[0] + ", " + Offsets[3])
 			endif
 
 			if actorMouthArray[actorArrayIdx] == 1
@@ -567,6 +555,18 @@ state Ready
 			elseif actorMouthArray[actorArrayIdx] == 0
 				sslBaseExpression.CloseMouth(ActorRef)
 			endif			
+						
+			if actorAnimationArray[actorArrayIdx] != ""		
+				Debug.SendAnimationEvent(actorRef, actorAnimationArray[actorArrayIdx])		
+			endif 
+	
+			if actorSosArray[actorArrayIdx] != ""
+				Debug.SendAnimationEvent(actorRef, actorSosArray[actorArrayIdx])
+			endif
+
+			if actorActionArray[actorArrayIdx] == "undress"
+				runStrip()
+			endif
 
 			actorArrayIdx += 1					
 			RegisterForSingleUpdate(0.4)
@@ -581,12 +581,13 @@ state Prepare
 		ClearEffects()
 		GetPositionInfo()
 		; Starting position
-		OffsetCoords(Loc, Center, Offsets)
-		MarkerRef.SetPosition(Loc[0], Loc[1], Loc[2])
-		MarkerRef.SetAngle(Loc[3], Loc[4], Loc[5])
-		ActorRef.SetPosition(Loc[0], Loc[1], Loc[2])
-		ActorRef.SetAngle(Loc[3], Loc[4], Loc[5])
-		AttachMarker()
+		; OffsetCoords(Loc, Center, Offsets)
+		; MarkerRef.SetPosition(Loc[0], Loc[1], Loc[2])
+		; MarkerRef.SetAngle(Loc[3], Loc[4], Loc[5])
+		; ActorRef.SetPosition(Loc[0], Loc[1], Loc[2])
+		; ActorRef.SetAngle(Loc[3], Loc[4], Loc[5])
+		; AttachMarker()
+		Debug.SendAnimationEvent(ActorRef, "IdleForceDefaultState")
 		Debug.SendAnimationEvent(ActorRef, "SOSFastErect")
 		; Notify thread prep is done
 		if Thread.GetState() == "Prepare"
@@ -977,9 +978,7 @@ function StopAnimating(bool Quick = false, string ResetAnim = "IdleForceDefaultS
 			ActorRef.PushActorAway(ActorRef, 0.1)
 		endIf
 	endIf
-	PlayingSA = "SexLabSequenceExit1"
-
-	actorRef.SetUnconscious(false)
+	PlayingSA = "SexLabSequenceExit1"	
 endFunction
 
 function AttachMarker()
@@ -1042,6 +1041,7 @@ function UnlockActor()
 	if !ActorRef
 		return
 	endIf
+	
 	; Detach positioning marker
 	ActorRef.StopTranslation()
 	ActorRef.SetVehicle(none)
@@ -1324,18 +1324,16 @@ function PreHumanScene()
 
 		Debug.Notification("PreHumanScene" + ", " + Animation.Name)
 
-		actorRef.SetUnconscious(true)
-
 		int type = Utility.RandomInt(1, 2)
 
-			makeSoloAnimPreScene()
-			makeSoloAnimUndressScene()
-			makeSoloAnimPostScene()
+			makeLovingAnimPreScene()			
+			makeLovingAnimUndressScene()		
+			makeLovingAnimPostScene()
 
 		; if isSolo
-		; 	makeSoloAnimPreScene(type)
-		; 	makeSoloAnimUndressScene(type)
-		; 	makeSoloAnimPostScene(type)
+			; makeSoloAnimPreScene()
+			; makeSoloAnimUndressScene()
+			; makeSoloAnimPostScene()
 		; elseif isLove
 		; 	makeLovingAnimPreScene(type)			
 		; 	makeLovingAnimUndressScene(type)		
@@ -1404,76 +1402,82 @@ function runStrip()
 endfunction
 
 function makeSoloAnimPreScene()
-	setKeyFrame(0, _forward = -50.0)
-	setKeyFrame(2, "SC_Solo_Pre")
+			setKeyFrame(0, _forward = -50.0)
+			setKeyFrame(2,  "SC_Solo_Pre")
 
-	int type = Utility.RandomInt(1, 2)
-	if isFemale		
-		setKeyFrame(12, "SC_Aroused_" + type + "_F")
-	else
-		setKeyFrame(12, "SC_Aroused_" + type + "_M")
-	endif
+		if isFemale		
+			setKeyFrame(12, "SC_Aroused_" + Utility.RandomInt(1, 3) + "_F")
+		else
+			setKeyFrame(12, "SC_Aroused_" + Utility.RandomInt(1, 2) + "_M")
+		endif
 endfunction 
 
 function makeSoloAnimUndressScene()
 	if isFemale 
-		int type = Utility.RandomInt(1, 3)
 		if actorRef.GetWornForm(0x00000004) 
 			setKeyFrame(23, "SC_Undress_Self_F")
 			setKeyFrame(29, "", _action = "undress")
-			setKeyFrame(12, "SC_Aroused_" + type + "_F")
+			setKeyFrame(30, "SC_Aroused_Naked_F")
 		else 
-			setKeyFrame(23, "SC_Aroused_Naked_F")				
+			setKeyFrame(23, "SC_Aroused_Naked_F")
 		endif
 	else 
-		int type = Utility.RandomInt(1, 2)
 		if actorRef.GetWornForm(0x00000004) 
 			setKeyFrame(23, "SC_Undress_Self_M")
 			setKeyFrame(29, _action = "undress")	
-			setKeyFrame(12, "SC_Aroused_" + type + "_M")
+			setKeyFrame(30, "SC_Aroused_" + Utility.RandomInt(1, 2) + "_M")
+
+			setKeyFrame(31,  "SOSSlowErect")
+			setKeyFrame(32,  "SOSBendUp")			
 		else 
-			setKeyFrame(12, "SC_Aroused_" + type + "_M")
 		endif 
 	endif
 endfunction
 
 function makeSoloAnimPostScene() 
-	setKeyFrame(50, "end")
+			setKeyFrame(50, "end")
 endfunction
 
-function makeLovingAnimPreScene(int type)
-	if isFemale 
-		setKeyFrame(2,  "SC_Kiss_A1_S1")
-		setKeyFrame(8,  "SC_Kiss_A1_S2")
-		setKeyFrame(26, "SC_Kiss_A1_S3")
-	else
-		setKeyFrame(2,  "SC_Kiss_A2_S1")
-		setKeyFrame(8,  "SC_Kiss_A2_S2")
-		setKeyFrame(26, "SC_Kiss_A2_S3")
-	endif
+function makeLovingAnimPreScene()
+		if isFemale 
+			setKeyFrame(2,  "SC_Kiss_A1_S1")
+			setKeyFrame(7,  "SC_Kiss_A1_S2")
+			setKeyFrame(25, "SC_Kiss_A1_S3")
+		else
+			setKeyFrame(2,  "SC_Kiss_A2_S1", _forward=-1)
+			setKeyFrame(7,  "SC_Kiss_A2_S2")
+			setKeyFrame(25, "SC_Kiss_A2_S3")
+		endif
 endfunction
 
-function makeLovingAnimUndressScene(int type)
+function makeLovingAnimUndressScene()
 	if isFemale 
 		if actorRef.GetWornForm(0x00000004) 
-			setKeyFrame(28, "SC_Undress_Self_F")
+			setKeyFrame(26, "SC_Undress_Self_F")
 			setKeyFrame(30, "", _action = "undress")	
-			setKeyFrame(38, "SC_Aroused_1_F")
+			setKeyFrame(34, "SC_Aroused_Naked_F")
 		else 
-			setKeyFrame(28, "SC_Dance_A1_S4")	
+			setKeyFrame(28, "SC_Aroused_Naked_F")
 		endif
 	else
-			setKeyFrame(28, "SC_Aroused_1_M")
+			setKeyFrame(26, "SC_Aroused_" + Utility.RandomInt(1, 2) + "_M", _forward=30, _rotate = 180)
 		if actorRef.GetWornForm(0x00000004) 
-			setKeyFrame(34, "SC_Undress_Self_M")
-			setKeyFrame(40, _action = "undress")
+			setKeyFrame(30, "SC_Undress_Self_M")
+			setKeyFrame(36, _action = "undress")
+			setKeyFrame(37, "SC_Aroused_" + Utility.RandomInt(1, 2) + "_M")
+
+			setKeyFrame(38,  "SOSSlowErect")
+			setKeyFrame(39,  "SOSBendUp")	
 		else
 		endif 
 	endif
 endfunction
 
-function makeLovingAnimPostScene(int type) 
-		setKeyFrame(44, "end")
+function makeLovingAnimPostScene()
+	if isFemale 
+			setKeyFrame(44, "SC_Lure_Stand_A1_S4", _rotate=180,  _forward=10)
+	endif 
+			setKeyFrame(54, "end")
 endfunction
 
 function makeProstitueAnimPreScene(int type)
