@@ -34,7 +34,6 @@ bool IsMale
 bool IsFemale
 bool IsCreature
 bool IsVictim
-bool isSolo
 bool IsAggressor
 bool IsPlayer
 bool IsTracked
@@ -253,21 +252,7 @@ String[] actorActionArray
 String[] actorSosArray
 float[]	 actorRotateArray
 float[]	 actorForwardArray
-float[]	 actorUpArray
-float[]  actorSideArray
-int[]   actorMouthArray
 int   actorArrayIdx = 0
-
-function setKeyFrame (int idx, String _aniName = "", String _action = "", String _sos = "", int _mouth = 0, float _forward = 1000.0, float _up = 1000.0, float _side = 1000.0, float _rotate = 1000.0)
-	actorAnimationArray[idx]  = _aniName
-	actorActionArray[idx] = _action	
-	actorSosArray[idx] = _sos
-	actorMouthArray[idx] = _mouth
-	actorForwardArray[idx] = _forward
-	actorUpArray[idx] = _up
-	actorSideArray[idx] = _side
-	actorRotateArray[idx] = _rotate	
-endfunction
 
 state Ready
 
@@ -275,8 +260,7 @@ state Ready
 		return false
 	endFunction
 
-	function PrepareActor()		
-
+	function PrepareActor()
 		; Remove any unwanted combat effects
 		ClearEffects()
 		if IsPlayer
@@ -310,36 +294,7 @@ state Ready
 			PathToCenter()
 		endIf
 		LockActor()
-		; pre-move to starting position near other actors
-		Offsets[0] = 0.0
-		Offsets[1] = 0.0
-		Offsets[2] = 5.0 ; hopefully prevents some users underground/teleport to giant camp problem?
-		Offsets[3] = 0.0
-		; Starting position
 
-		if Position == 1
-			Offsets[0] = 25.0
-			Offsets[3] = 0.0
-
-		elseif Position == 2
-			Offsets[1] = -25.0
-			Offsets[3] = 90.0
-
-		elseif Position == 3
-			Offsets[1] = 0.0
-			Offsets[3] = -90.0
-
-		elseif Position == 4
-			Offsets[0] = -25.0
-		endIf
-		
-		OffsetCoords(Loc, Center, Offsets)
-		MarkerRef.SetPosition(Loc[0], Loc[1], Loc[2])
-		MarkerRef.SetAngle(Loc[3], Loc[4], Loc[5])
-		ActorRef.SetPosition(Loc[0], Loc[1], Loc[2])
-		ActorRef.SetAngle(Loc[3], Loc[4], Loc[5])
-
-		AttachMarker()
 		; Utility.Wait(1.0) ; DEV TMP
 		; Pick a voice if needed
 		if !Voice && !IsForcedSilent
@@ -368,39 +323,6 @@ state Ready
 				if !HadStrapon
 					Strapon = Config.GetStrapon()
 				endIf
-			endIf
-			; Strip actor
-			if ActorRef
-
-				actorAnimationArray = new String[128]
-				actorActionArray = new String[128]
-				actorSosArray = new String[128]
-				actorRotateArray = new Float[128]
-				actorForwardArray = new Float[128]
-				actorUpArray = new Float[128]
-				actorSideArray = new Float[128]
-				actorMouthArray = new Int[128]
-		
-				actorArrayIdx = 0
-				while actorArrayIdx < 128
-					actorRotateArray[actorArrayIdx] = 1000.0
-					actorForwardArray[actorArrayIdx] = 1000.0
-					actorUpArray[actorArrayIdx] = 1000.0
-					actorSideArray[actorArrayIdx] = 1000.0
-					
-					actorArrayIdx += 1
-				endWhile
-		
-				actorArrayIdx = 0
-			
-				if thread.ActorCount == 1
-					isSolo = true			
-				else 
-					isSolo = false
-				endif
-		
-				PreHumanScene()
-
 			endIf
 			
 			ResolveStrapon()
@@ -461,102 +383,116 @@ state Ready
 		else
 			BaseEnjoyment = Utility.RandomInt(0, 10)
 		endIf
-		LogInfo += "BaseEnjoyment["+BaseEnjoyment+"]"
-		Log(LogInfo)
+
 		; Play custom starting animation event
 		if StartAnimEvent != ""
 			Debug.SendAnimationEvent(ActorRef, StartAnimEvent)
 		endIf
 
-		RegisterForSingleUpdate(1.0)		
+		actorAnimationArray = new String[90]
+		actorActionArray = new String[90]
+		actorSosArray = new String[90]
+		actorRotateArray = new Float[90]
+		actorForwardArray = new Float[90]
+	
+		actorArrayIdx = 0
+		while actorArrayIdx < 90
+			actorRotateArray[actorArrayIdx] = 1000.0
+			actorForwardArray[actorArrayIdx] = 1000.0
+			actorArrayIdx += 1
+		endWhile		
+		actorArrayIdx = 0
+
+		HumanLeadInScene(thread.ActorCount)
+		RegisterForSingleUpdate(0.1)	; read onUpdate
 	endFunction
+
+	function waitForOther(float Distance, ObjectReference WaitRef, ObjectReference actorRef, bool isFirstActor) 
+		; Start wait loop for actor pathing.
+		int StuckCheck  = 0
+		float Failsafe  = Utility.GetCurrentRealTime() + 30.0
+
+		if (isFirstActor)
+			if IsVictim
+				Debug.SendAnimationEvent(actorRef, "00_Embarassed")
+			else
+				Debug.SendAnimationEvent(actorRef, "00_Lure" + Utility.RandomInt(1,2) + "_Dance")
+			endif
+		endif 
+
+		ActorRef.SetLookAt(WaitRef, true)
+		while Distance > 80.0 && Utility.GetCurrentRealTime() < Failsafe
+
+			if isFirstActor
+				float zOffset = actorRef.GetHeadingAngle(Thread.Positions[1])
+				actorRef.SetAngle(actorRef.GetAngleX(), actorRef.GetAngleY(), actorRef.GetAngleZ() + zOffset)
+
+				Center[0] = actorRef.GetPositionX()
+				Center[1] = actorRef.GetPositionY()
+				Center[2] = actorRef.GetPositionZ()
+			endif 
+
+			Utility.Wait(1.0)
+			float Previous = Distance
+			Distance = ActorRef.GetDistance(WaitRef)
+			; Check if same distance as last time.
+			if Math.Abs(Previous - Distance) < 1.0
+				if StuckCheck > 2 ; Stuck for 2nd time, end loop.
+					Distance = 0.0
+				endIf
+				StuckCheck += 1 ; End loop on next iteration if still stuck.
+			else
+				StuckCheck -= 1 ; Reset stuckcheck if progress was made.
+			endIf
+		endWhile
+		ActorRef.ClearLookAt()
+	endfunction 
 
 	function PathToCenter()
 		ObjectReference CenterRef = Thread.CenterAlias.GetReference()
-		if CenterRef && ActorRef && (Thread.ActorCount > 1 || CenterRef != ActorRef)
+		if CenterRef && ActorRef && (Thread.ActorCount > 1 || CenterRef != ActorRef)		
 			ObjectReference WaitRef = CenterRef
-			if CenterRef == ActorRef
+		
+			if WaitRef == ActorRef
 				WaitRef = Thread.Positions[IntIfElse(Position != 0, 0, 1)]
-			endIf
-			float Distance = ActorRef.GetDistance(WaitRef)
-			if WaitRef && Distance < 8000.0 && Distance > 135.0
-				if CenterRef != ActorRef
+
+				float Distance = ActorRef.GetDistance(WaitRef)
+			
+				if Distance > 135.0 && Distance < 8000.0
+					waitForOther(Distance, WaitRef, ActorRef, true)
+				endif				
+			else 
+				float Distance = ActorRef.GetDistance(WaitRef)
+
+				if Distance > 135.0 && Distance < 8000.0
 					ActorRef.SetFactionRank(AnimatingFaction, 2)
 					ActorRef.EvaluatePackage()
-				endIf
-				ActorRef.SetLookAt(WaitRef, true)
 
-				; Start wait loop for actor pathing.
-				int StuckCheck  = 0
-				float Failsafe  = Utility.GetCurrentRealTime() + 30.0
-				while Distance > 80.0 && Utility.GetCurrentRealTime() < Failsafe
-					Utility.Wait(1.0)
-					float Previous = Distance
-					Distance = ActorRef.GetDistance(WaitRef)
-					Log("Current Distance From WaitRef["+WaitRef+"]: "+Distance+" // Moved: "+(Previous - Distance))
-					; Check if same distance as last time.
-					if Math.Abs(Previous - Distance) < 1.0
-						if StuckCheck > 2 ; Stuck for 2nd time, end loop.
-							Distance = 0.0
-						endIf
-						StuckCheck += 1 ; End loop on next iteration if still stuck.
-						Log("StuckCheck("+StuckCheck+") No progress while waiting for ["+WaitRef+"]")
-					else
-						StuckCheck -= 1 ; Reset stuckcheck if progress was made.
-					endIf
-				endWhile
+					waitForOther(Distance, WaitRef, ActorRef, false)
 
-				ActorRef.ClearLookAt()
-				if CenterRef != ActorRef
 					ActorRef.SetFactionRank(AnimatingFaction, 1)
-					ActorRef.EvaluatePackage()
-				endIf
+					ActorRef.EvaluatePackage()					
+				endif				
 			endIf
 		endIf
 	endFunction
 
-	; alton 
+	; prepare modifed by alton
 	event OnUpdate()
-
 		if actorAnimationArray[actorArrayIdx] == "end"
 			GoToState("Prepare")
-			RegisterForSingleUpdate(0.1)
+			PrepareFinished()
+		elseif actorAnimationArray[actorArrayIdx] == "undress"
+			Strip()
+		elseif actorAnimationArray[actorArrayIdx] == "redress"
+
+		elseif actorAnimationArray[actorArrayIdx] == "mopen"	; mouth open
+			sslBaseExpression.OpenMouth(ActorRef)
+		elseif actorAnimationArray[actorArrayIdx] == "mclose"	; mouth close
+			sslBaseExpression.CloseMouth(ActorRef)
 		else
-			bool moveChanged = false
 
-			if actorForwardArray[actorArrayIdx] < 1000.0
-				Offsets[0] = actorForwardArray[actorArrayIdx]
-				moveChanged = true
-			endif
-	
-			if actorSideArray[actorArrayIdx] < 1000.0
-				Offsets[1] = actorSideArray[actorArrayIdx]
-				moveChanged = true	
-			endif
-	
-			if actorRotateArray[actorArrayIdx] < 1000.0
-				Offsets[3] = actorRotateArray[actorArrayIdx]		
-				moveChanged = true
-			endif
-	
-			if moveChanged
-				OffsetCoords(Loc, Center, Offsets)
-				MarkerRef.SetPosition(Loc[0], Loc[1], Loc[2])
-				MarkerRef.SetAngle(Loc[3], Loc[4], Loc[5])
-				ActorRef.SetPosition(Loc[0], Loc[1], Loc[2])
-				ActorRef.SetAngle(Loc[3], Loc[4], Loc[5])
-				AttachMarker()
-
-				Debug.Notification("pos Change " + ", "+ Offsets[0] + ", " + Offsets[3])
-			endif
-
-			if actorMouthArray[actorArrayIdx] == 1
-				sslBaseExpression.OpenMouth(ActorRef)
-			elseif actorMouthArray[actorArrayIdx] == 0
-				sslBaseExpression.CloseMouth(ActorRef)
-			endif			
-						
-			if actorAnimationArray[actorArrayIdx] != ""		
+			if actorAnimationArray[actorArrayIdx] != ""
 				Debug.SendAnimationEvent(actorRef, actorAnimationArray[actorArrayIdx])		
 			endif 
 	
@@ -564,45 +500,57 @@ state Ready
 				Debug.SendAnimationEvent(actorRef, actorSosArray[actorArrayIdx])
 			endif
 
-			if actorActionArray[actorArrayIdx] == "undress"
-				runStrip()
-			endif
+			bool isMoveChanged = false
 
+			if actorForwardArray[actorArrayIdx] < 1000.0
+				Offsets[0] = actorForwardArray[actorArrayIdx]
+				isMoveChanged = true
+			endif
+	
+			if actorRotateArray[actorArrayIdx] < 1000.0
+
+				if Offsets[3] == 180 && actorRotateArray[actorArrayIdx] == 180
+					Offsets[3] = 0
+				else 
+					Offsets[3] = actorRotateArray[actorArrayIdx]
+				endif 				
+				isMoveChanged = true			
+			endif		
+
+			if isMoveChanged
+				OffsetCoords(Loc, Center, Offsets)
+				MarkerRef.SetPosition(Loc[0], Loc[1], Loc[2])
+				MarkerRef.SetAngle(Loc[3], Loc[4], Loc[5])
+				ActorRef.SetPosition(Loc[0], Loc[1], Loc[2])
+				ActorRef.SetAngle(Loc[3], Loc[4], Loc[5])
+				AttachMarker()
+			endif
+			
 			actorArrayIdx += 1					
-			RegisterForSingleUpdate(0.4)
+			RegisterForSingleUpdate(1.0)
 		endif
 	endEvent
 endState
 
 state Prepare
-	event OnUpdate()
-		; Utility.Wait(5.0) ; DEV TMP
 
-		ClearEffects()
-		GetPositionInfo()
-		; Starting position
-		; OffsetCoords(Loc, Center, Offsets)
-		; MarkerRef.SetPosition(Loc[0], Loc[1], Loc[2])
-		; MarkerRef.SetAngle(Loc[3], Loc[4], Loc[5])
-		; ActorRef.SetPosition(Loc[0], Loc[1], Loc[2])
-		; ActorRef.SetAngle(Loc[3], Loc[4], Loc[5])
-		; AttachMarker()
+	event onUpdate() 	
 		Debug.SendAnimationEvent(ActorRef, "IdleForceDefaultState")
 		Debug.SendAnimationEvent(ActorRef, "SOSFastErect")
-		; Notify thread prep is done
-		if Thread.GetState() == "Prepare"
-			Thread.SyncEventDone(kPrepareActor)
-		else
-			StartAnimating()
-		endIf
-	endEvent
+		StartAnimating()
+	endEvent 
 
-	function StartAnimating()
+	function PrepareFinished() 
+		Game.FadeOutGame(true, true, 0.0, 3.0)
+		RegisterForSingleUpdate(2.0)
+	endfunction
+
+	function StartAnimating()		
 		TrackedEvent("Start")
 		; Remove from bard audience if in one
 		Config.CheckBardAudience(ActorRef, true)
 		; Prepare for loop
-		StopAnimating(true)
+		; StopAnimating(true)	
 		StartedAt  = Utility.GetCurrentRealTime()
 		LastOrgasm = StartedAt
 		GoToState("Animating")
@@ -614,12 +562,7 @@ state Prepare
 			MiscUtil.SetFreeCameraState(true)
 			MiscUtil.SetFreeCameraSpeed(Config.AutoSUCSM)
 		endIf
-		; Start update loop
-		if Thread.GetState() == "Prepare"
-			Thread.SyncEventDone(kStartup)
-		else
-			SendAnimation()
-		endIf
+		SendAnimation()
 		RegisterForSingleUpdate(Utility.RandomFloat(1.0, 3.0))
 	endFunction
 endState
@@ -696,28 +639,16 @@ state Animating
 		if LoopDelay >= VoiceDelay
 			LoopDelay = 0.0
 			if !IsSilent
-
-				; alton volume modified
-				float volume = 1.0
-				if isSolo 
-					if Enjoyment < 70
-						volume = 0.2
-					elseif Enjoyment < 85
-						volume = 0.3
-					else 
-						volume = 0.5
-					endif 
-				endif 
-
+				float volume = 0.4
 				Voice.PlayMoan(ActorRef, Enjoyment, IsVictim, UseLipSync, volume)
 			endIf
-			RefreshExpression()
+			; RefreshExpression()
 		endIf
 		; Loop
 		LoopDelay += (VoiceDelay * 0.35)
 		RegisterForSingleUpdate(VoiceDelay * 0.35)
 
-		findNearHuman(actorRef, 43, 500)	; alton notice
+		findPeekHuman(actorRef, 43, 300)	; alton modified
 	endEvent
 
 	function SyncThread()
@@ -824,6 +755,8 @@ state Animating
 	endFunction
 
 	function DoOrgasm(bool Forced = false)
+		Debug.Notification("DoOrgasm ..")
+
 		if !Forced && (NoOrgasm || Thread.DisableOrgasms)
 			; Orgasm Disabled for actor or whole thread
 			return 
@@ -880,6 +813,7 @@ state Animating
 	endFunction
 
 	event ResetActor()
+		Debug.Notification("ResetActor ..")
 		ClearEvents()
 		GoToState("Resetting")
 		Log("Resetting!")
@@ -1296,65 +1230,119 @@ bool function ContinueStrip(Form ItemRef, bool DoStrip = true)
 endFunction
 
 ; alton modified
-bool function findNearHuman(actor _actor,  int _formType = 0, float _distance = 50.0)
+bool function findPeekHuman(actor _actor,  int _formType = 0, float _distance = 50.0)
 	ObjectReference[] actorList =  FindAllReferencesOfFormType(_actor, _formType, _distance)  ; 43 npc
 
-	int idx=0
-	while idx < 20
-		actor _actRef = actorList[idx] as actor
-		if !_actRef.isDead() && _actRef != _actor
-			Debug.Notification("found")
-			return true
+	int i=0
+	while i < 20
+		actor _actRef = actorList[i] as actor
+		if !_actRef.isDead()
+			bool isInvolvedActor = false
+			int j=0
+			while j < thread.positions.length
+
+				if _actRef == thread.positions[j]
+					isInvolvedActor = true
+				endif 
+				j += 1
+			endwhile
+
+			if !isInvolvedActor
+				Debug.Notification("found someone to peek")
+			endif 
 		endif 
 
-		idx += 1
+		i += 1
 	endWhile
 
 	return false
 endfunction
 
-function PreHumanScene()
-	; Start stripping animation
-			
-		bool isRape = false 
+; function HumanLeadInSceneSkip() 
+; 	Debug.Notification("HumanLeadInSceneSkip" + ", " + Animation.Name)
+; 	Strip()	
+; endfunction 
 
+function HumanLeadInScene(int partyCount)
+		Debug.Notification("HumanLeadInScene" + ", " + Animation.Name)
+
+		bool isSolo = false 
+		bool isRape = false 
+		bool isWorn= false
+
+		string genderStr = "M"
+		string sceneMode = "MM"
+
+		if isFemale 
+			genderStr = "F"
+		endif		
+				
 		if IsVictim || IsAggressor
 			isRape = true
 		endif 
 
-		Debug.Notification("PreHumanScene" + ", " + Animation.Name)
+		if actorRef.GetWornForm(0x00000004) 
+			isWorn = true
+		endif 
 
-		int type = Utility.RandomInt(1, 2)
+		if partyCount == 1
+			isSolo = true
+			sceneMode = "Solo"
+		endif 
 
-			makeLovingAnimPreScene()			
-			makeLovingAnimUndressScene()		
-			makeLovingAnimPostScene()
+		if partyCount > 1
+			int firstActorGender = thread.positions[0].GetActorBase().GetSex()
+			int secondActorGender = thread.positions[1].GetActorBase().GetSex()
 
-		; if isSolo
-			; makeSoloAnimPreScene()
-			; makeSoloAnimUndressScene()
-			; makeSoloAnimPostScene()
-		; elseif isLove
-		; 	makeLovingAnimPreScene(type)			
-		; 	makeLovingAnimUndressScene(type)		
-		; 	makeLovingAnimPostScene(type)
-		; elseif isPrositute
-		; 	makeProstitueAnimPreScene(type)			
-		; 	makeProstituteAnimUndressScene(type)		
-		; 	makeProstitueAnimPostScene(type)
-		; elseif isRape
-		; 	makeRapeAnimPreScene(type)			
-		; 	makeRapeAnimHarrasmentScene(type)
-		; 	makeRapeAnimUndressScene(type)		
-		; 	makeRapeAnimPostScene(type)
-		; else			
-		; endif
+			if firstActorGender == 1 && secondActorGender == 1
+				sceneMode = "FF"
+			elseif firstActorGender == 0 && secondActorGender == 1
+				sceneMode = "MF"
+			elseif firstActorGender == 1 && secondActorGender == 0
+				sceneMode = "FM"
+			endif
+		endif 
 
-		NoUndress = true
-		RegisterForSingleUpdate(0.1)
+		Debug.Notification("sceneMode " + ", " + sceneMode)
+
+		if isSolo
+			soloScene(isWorn, genderStr)
+		else
+			if sceneMode == "MM"				
+				Strip()								
+				setKeyFrame(1, _aniName = "end")
+			else 
+				if sceneMode == "FF" 
+					if position == 0
+						genderStr = "F"
+					elseif position == 1
+						genderStr = "M"
+					endif
+				endif
+
+				int relationRank = thread.positions[0].GetRelationshipRank(thread.positions[1])			
+
+				; prostitueScene(isWorn, genderStr, "Dance")
+				; loverScene(isWorn, genderStr, "Long_Kiss")
+
+				rapeBackHugScene(isWorn, genderStr, "")
+			
+				; if relationRank == 4
+				; 	loverScene(isWorn, genderStr, "Long_Kiss")
+				; elseif relationRank == 3 || relationRank == 2
+				; 	loverScene(isWorn, genderStr, "Kiss")
+				; elseif relationRank == 1
+				; 	enjoyScene(isWorn, genderStr, "Shake")
+				; elseif relationRank == 0
+				; 	enjoyScene(isWorn, genderStr, "Dance")
+				; else 
+				; 	rapeScene()
+							
+			endif 			
+		endif
 endFunction
 
-function runStrip()
+function Strip()
 	; Select stripping array
 	bool[] Strip
 	if StripOverride.Length == 33
@@ -1401,238 +1389,8 @@ function runStrip()
 	Log("Equipment: "+Equipment)
 endfunction
 
-function makeSoloAnimPreScene()
-			setKeyFrame(0, _forward = -50.0)
-			setKeyFrame(2,  "SC_Solo_Pre")
-
-		if isFemale		
-			setKeyFrame(12, "SC_Aroused_" + Utility.RandomInt(1, 3) + "_F")
-		else
-			setKeyFrame(12, "SC_Aroused_" + Utility.RandomInt(1, 2) + "_M")
-		endif
-endfunction 
-
-function makeSoloAnimUndressScene()
-	if isFemale 
-		if actorRef.GetWornForm(0x00000004) 
-			setKeyFrame(23, "SC_Undress_Self_F")
-			setKeyFrame(29, "", _action = "undress")
-			setKeyFrame(30, "SC_Aroused_Naked_F")
-		else 
-			setKeyFrame(23, "SC_Aroused_Naked_F")
-		endif
-	else 
-		if actorRef.GetWornForm(0x00000004) 
-			setKeyFrame(23, "SC_Undress_Self_M")
-			setKeyFrame(29, _action = "undress")	
-			setKeyFrame(30, "SC_Aroused_" + Utility.RandomInt(1, 2) + "_M")
-
-			setKeyFrame(31,  "SOSSlowErect")
-			setKeyFrame(32,  "SOSBendUp")			
-		else 
-		endif 
-	endif
-endfunction
-
-function makeSoloAnimPostScene() 
-			setKeyFrame(50, "end")
-endfunction
-
-function makeLovingAnimPreScene()
-		if isFemale 
-			setKeyFrame(2,  "SC_Kiss_A1_S1")
-			setKeyFrame(7,  "SC_Kiss_A1_S2")
-			setKeyFrame(25, "SC_Kiss_A1_S3")
-		else
-			setKeyFrame(2,  "SC_Kiss_A2_S1", _forward=-1)
-			setKeyFrame(7,  "SC_Kiss_A2_S2")
-			setKeyFrame(25, "SC_Kiss_A2_S3")
-		endif
-endfunction
-
-function makeLovingAnimUndressScene()
-	if isFemale 
-		if actorRef.GetWornForm(0x00000004) 
-			setKeyFrame(26, "SC_Undress_Self_F")
-			setKeyFrame(30, "", _action = "undress")	
-			setKeyFrame(34, "SC_Aroused_Naked_F")
-		else 
-			setKeyFrame(28, "SC_Aroused_Naked_F")
-		endif
-	else
-			setKeyFrame(26, "SC_Aroused_" + Utility.RandomInt(1, 2) + "_M", _forward=30, _rotate = 180)
-		if actorRef.GetWornForm(0x00000004) 
-			setKeyFrame(30, "SC_Undress_Self_M")
-			setKeyFrame(36, _action = "undress")
-			setKeyFrame(37, "SC_Aroused_" + Utility.RandomInt(1, 2) + "_M")
-
-			setKeyFrame(38,  "SOSSlowErect")
-			setKeyFrame(39,  "SOSBendUp")	
-		else
-		endif 
-	endif
-endfunction
-
-function makeLovingAnimPostScene()
-	if isFemale 
-			setKeyFrame(44, "SC_Lure_Stand_A1_S4", _rotate=180,  _forward=10)
-	endif 
-			setKeyFrame(54, "end")
-endfunction
-
-function makeProstitueAnimPreScene(int type)
-
-	if type == 1
-		; dance
-		if actorRef == thread.positions[0] 	; victim
-			setKeyFrame(2,  "SC_Normal_Pre_1_F_S1")
-			setKeyFrame(10, "SC_Normal_Pre_1_F_S2")
-			setKeyFrame(20, "SC_Normal_Pre_1_F_S3")
-
-		elseif actorRef == thread.positions[1] 	; aggressor
-			setKeyFrame(2,  "SC_Normal_Pre_1_M_S1")
-		endif		
-	else 
-
-	endif
-endfunction
-
-function makeProstituteAnimUndressScene(int type)
-	if type == 1
-		if actorRef == thread.positions[0] 	; victim
-			setKeyFrame(28, "SC_Undress_Self_F")
-			setKeyFrame(34, "", _action = "undress")			
-			setKeyFrame(36, "SC_Normal_Pre_1_F_S4")
-			setKeyFrame(48,  "SC_Sit")
-		elseif actorRef == thread.positions[1] 	; aggressor		
-		endif		
-	else 
-		if actorRef == thread.positions[0] 	; victim
-			setKeyFrame(24,  "SC_Undress_Reaction", _action = "undress")		
-			setKeyFrame(26, "SC_Normal_Pre_1_F_S4")
-			setKeyFrame(34,  "SC_Sit_1_F")
-			
-			if thread.positions[1].GetWornForm(0x00000004) 
-				setKeyFrame(36,  "Undress_Force_By_Victim")				; undress aggressor
-			endif
-					
-		elseif actorRef == thread.positions[1] ; aggressor
-			if thread.positions[0].GetWornForm(0x00000004) 
-				setKeyFrame(24,   "Undress_Force_By_Aggressor")			; undress victim
-			endif		
-			setKeyFrame(26,   "SC_Aroused_1_M")							; enjoy watching
-			
-			if actorRef.GetWornForm(0x00000004) 
-				setKeyFrame(44, _action = "undress")
-			endif
-		endif	
-	endif
-endfunction
-
-function makeProstitueAnimPostScene(int type)
-	if type == 1
-		if actorRef == thread.positions[0] 	; victim
-			setKeyFrame(50,  "SC_Blow_By_Finger")
-			setKeyFrame(80,  "end")
-		elseif actorRef == thread.positions[1] 	; aggressor
-			setKeyFrame(50,  "SC_Normal_Blowjob_A2_S1")
-			setKeyFrame(56,  "SC_Normal_Blowjob_A2_S2")
-			setKeyFrame(62,  "SC_Normal_Blowjob_A2_S3")
-			setKeyFrame(68,  "SC_Normal_Blowjob_A2_S4")
-			setKeyFrame(74,  "SC_Normal_Blowjob_A2_S5")
-			setKeyFrame(80,  "end")
-
-			if !isFemale 
-				setKeyFrame(50,  "SOSSlowErect")
-				setKeyFrame(51,  "SOSBendUp")
-			endif	
-		endif	
-	elseif type == 2
-		if actorRef == thread.positions[0] 	; victim
-			setKeyFrame(50,  "SC_Normal_Blowjob_A1_S1")
-			setKeyFrame(56,  "SC_Normal_Blowjob_A1_S2", _mouth = 1)
-			setKeyFrame(62,  "SC_Normal_Blowjob_A1_S3")
-			setKeyFrame(68,  "SC_Normal_Blowjob_A1_S4")
-			setKeyFrame(74,  "SC_Normal_Blowjob_A1_S5", _mouth = 0)
-			setKeyFrame(80,  "end")
-
-		elseif actorRef == thread.positions[1] 	; aggressor	
-			setKeyFrame(50,  "SC_Normal_Blowjob_A2_S1", _forward = -5)
-			setKeyFrame(56,  "SC_Normal_Blowjob_A2_S2", _mouth = 1)
-			setKeyFrame(62,  "SC_Normal_Blowjob_A2_S3")
-			setKeyFrame(68,  "SC_Normal_Blowjob_A2_S4")
-			setKeyFrame(74,  "SC_Normal_Blowjob_A2_S5", _mouth = 0)
-			setKeyFrame(80,  "end")
-
-			if !isFemale 
-				setKeyFrame(50,  "SOSSlowErect")
-				setKeyFrame(51,  "SOSBendUp")
-			endif				
-		endif	
-	endif 
-endfunction
-
-function makeRapeAnimPreScene(int type) 
-	if actorRef == thread.positions[0] 	; victim
-		setKeyFrame(2,  "Embarassed_Victim")
-		setKeyFrame(10,  "Struggle_Victim")
-	else 		
-		setKeyFrame(0,  "Approach_By_Aggressor_S1", _forward = 5) ; aggressor
-		setKeyFrame(5,  "Approach_By_Aggressor_S2")
-		setKeyFrame(7,  "Approach_By_Aggressor_S3")		
-	endif 
-endfunction
-
-function makeRapeAnimHarrasmentScene(int type)
-	if actorRef == thread.positions[0] 	; victim		
-		setKeyFrame(12,  "Rape_Backhug_Victim_S1")				
-		setKeyFrame(20,  "Rape_Backhug_Victim_S2")
-		setKeyFrame(30,  "Rape_Backhug_Victim_S3")
-		setKeyFrame(40,  "Rape_Backhug_Victim_S4")
-		setKeyFrame(52,  "Rape_Backhug_Victim_S5")
-
-		setKeyFrame(54,  "Enter_LayForward")				; lay forward
-
-	elseif actorRef == thread.positions[1] ; aggressor 
-		setKeyFrame(12,  "Rape_Backhug_Aggressor_S1", _forward = -10)
-		setKeyFrame(20,  "Rape_Backhug_Aggressor_S2")
-		setKeyFrame(52,  "Rape_Backhug_Aggressor_S3")
-		
-		setKeyFrame(54,  "Aroused_Male_S1")
-	endif	
-endfunction
-
-function makeRapeAnimUndressScene(int type) 
-	if actorRef == thread.positions[0] 	; victim		
-		if actorRef.GetWornForm(0x00000004) 
-			setKeyFrame(58,  "", _action = "undress")
-		endif
-	elseif actorRef == thread.positions[1] ; aggressor 
-		if actorRef.GetWornForm(0x00000004) 
-			setKeyFrame(54,  "Undress_Self_M", _forward = -30)			
-			setKeyFrame(62,  "", _action = "undress")
-			setKeyFrame(64,  "Aroused_Male_S2")
-		else 
-			setKeyFrame(54,  "Aroused_Male_S2")
-		endif		
-		
-		if !isFemale 
-			setKeyFrame(64,  "SOSFastErect")
-			setKeyFrame(65,  "SOSBendUp")
-		endif
-	endif	
-endfunction
-
-function makeRapeAnimPostScene(int type) 
-	if actorRef == thread.positions[0] 	; victim			
-		setKeyFrame(64,  "Giveup_Victim")
-		setKeyFrame(80,  "end")
-	elseif actorRef == thread.positions[1] 	; aggressor 
-		setKeyFrame(80,  "end")
-	endif	
-endfunction 
-
 function UnStrip()
+	Debug.Notification("unstrip " + Equipment.Length)
  	if !ActorRef || IsCreature || Equipment.Length == 0
  		return
  	endIf
@@ -1892,6 +1650,11 @@ function PrepareActor()
 endFunction
 function PathToCenter()
 endFunction
+function waitForOther(float Distance, ObjectReference WaitRef, ObjectReference actorRef, bool isFirstActor) 
+endFunction
+; Prepare
+function PrepareFinished()
+endFunction
 ; Animating
 function StartAnimating()
 endFunction
@@ -1956,3 +1719,327 @@ endfunction
 ; string[] property StringShare auto hidden ; AdjustKey
 ; bool[] property BoolShare auto hidden ; 
 ; sslBaseAnimation[] property _Animation auto hidden ; Animation
+
+
+; alton added
+function SetActorPosition (bool isFace= true)
+	; pre-move to starting position near other actors
+	Offsets[0] = 0.0
+	Offsets[1] = 0.0
+	Offsets[2] = 5.0 ; hopefully prevents some users underground/teleport to giant camp problem?
+	Offsets[3] = 0.0
+	; Starting position
+	
+	if Position == 1
+		Offsets[0] = 25.0
+
+		if isFace
+			Offsets[3] = 180.0
+		else 
+			Offsets[3] = 0.0
+		endif 
+
+	elseif Position == 2
+		Offsets[1] = -25.0
+		Offsets[3] = 90.0
+
+	elseif Position == 3
+		Offsets[1] = 25.0
+		Offsets[3] = -90.0
+
+	elseif Position == 4
+		Offsets[0] = -25.0
+	endIf
+		
+	OffsetCoords(Loc, Center, Offsets)
+	ActorRef.SetPosition(Loc[0], Loc[1], Loc[2])
+	ActorRef.SetAngle(Loc[3], Loc[4], Loc[5])
+endfunction
+
+;
+;	solo
+;
+function soloScene(bool _isWorn, String _gender)			
+	setActorPosition(true)		
+	int _nextKeyFrame = 0
+	_nextKeyFrame = lookAroundScene(_nextKeyFrame, 8)
+	_nextKeyFrame = undressScene(_nextKeyFrame, _isWorn, _gender, "SOSSlowErect")
+	_nextKeyFrame = endScene(_nextKeyFrame)
+endfunction
+
+;
+;	lover
+;
+function loverScene(bool _isWorn, String _gender, string _pos)
+	setActorPosition(false)
+	int _nextKeyFrame = 0	
+
+	_nextKeyFrame = kissScene(_nextKeyFrame, _isWorn, _gender, _pos)
+	_nextKeyFrame = undressScene(_nextKeyFrame, _isWorn, _gender, "SOSSlowErect")
+	_nextKeyFrame = endScene(_nextKeyFrame)
+endfunction 
+
+;
+;	enjoy
+;
+function enjoyScene(bool _isWorn, String _gender, string _pos)
+	setActorPosition(true)
+	int _nextKeyFrame = 0	
+
+	if _gender == "F"
+		_nextKeyFrame = lureScene(_nextKeyFrame, _isWorn, _gender, _pos)
+		_nextKeyFrame = undressScene(_nextKeyFrame, _isWorn, _gender)
+		_nextKeyFrame = arousedScene(_nextKeyFrame, 1,_isWorn, _gender)	
+	else 			
+		_nextKeyFrame = watchBelowScene(_nextKeyFrame, 20)
+		_nextKeyFrame = undressScene(_nextKeyFrame, _isWorn, _gender, "SOSSlowErect")
+		_nextKeyFrame = arousedScene(_nextKeyFrame, 1,_isWorn, _gender, "SOSSlowErect")
+	endif
+
+	_nextKeyFrame = endScene(45)
+endfunction 
+
+;
+;	prostitue
+;
+function prostitueScene(bool _isWorn, String _gender, string _pos)
+	setActorPosition(true)
+	int _nextKeyFrame = 0	
+
+	if _gender == "F"
+		_nextKeyFrame = showbodyScene(_nextKeyFrame, 14, _pos)
+		_nextKeyFrame = undressScene(_nextKeyFrame, _isWorn, _gender, "SOSSlowErect")
+		_nextKeyFrame = blowJobScene(_nextKeyFrame, _isWorn, _gender, "SOSSlowErect")
+	else 		
+		_nextKeyFrame = arousedScene(_nextKeyFrame, 8, _isWorn, _gender, "SOSSlowErect")
+		_nextKeyFrame = undressScene(_nextKeyFrame, _isWorn, _gender, "SOSSlowErect")
+		_nextKeyFrame = arousedScene(_nextKeyFrame, 6, _isWorn, _gender, "SOSSlowErect")
+		_nextKeyFrame = setAdjustPosition(_nextKeyFrame, _forward = 25)
+		_nextKeyFrame = blowJobScene(_nextKeyFrame, _isWorn, _gender, "SOSFastErect")
+	endif
+
+	_nextKeyFrame = endScene(45)
+endfunction
+;
+;	rape
+;
+function rapeDownScene(bool _isWorn, String _gender, string _pos)
+	setActorPosition(false)
+	int _nextKeyFrame = 0
+
+	if _gender == "F"
+		_nextKeyFrame = embarrasedScene(_nextKeyFrame, 8)
+		_nextKeyFrame = downToEarthScene(_nextKeyFrame, _isWorn, _gender)
+	else 			
+		_nextKeyFrame = watchRudlyScene(_nextKeyFrame, 8)
+		_nextKeyFrame = setAdjustPosition(_nextKeyFrame, _forward = 15)
+		_nextKeyFrame = downToEarthScene(_nextKeyFrame, _isWorn, _gender, "SOSFastErect")
+		_nextKeyFrame = setAdjustPosition(_nextKeyFrame, _rotate = 180, _forward = 25)
+		_nextKeyFrame = undressScene(_nextKeyFrame, _isWorn, _gender, "SOSSlowErect")
+	endif
+
+	_nextKeyFrame = endScene(60)
+endfunction 
+
+function rapeBackHugScene(bool _isWorn, String _gender, string _pos)
+	setActorPosition(true)
+	int _nextKeyFrame = 0
+
+	if _gender == "F"		
+		_nextKeyFrame = embarrasedScene(_nextKeyFrame, 8)	
+		_nextKeyFrame = undressVictimScene(_nextKeyFrame, _isWorn, _gender)
+		_nextKeyFrame = backhugToEarthScene(_nextKeyFrame, _isWorn, _gender)
+		_nextKeyFrame = giveupScene(_nextKeyFrame, 7)
+	else 			
+		_nextKeyFrame = arousedScene(_nextKeyFrame, 8, _isWorn, _gender, "SOSSlowErect")
+		_nextKeyFrame = setAdjustPosition(_nextKeyFrame, _rotate = 180)
+		_nextKeyFrame = undressVictimScene(_nextKeyFrame, _isWorn, _gender)			
+		_nextKeyFrame = setAdjustPosition(_nextKeyFrame, _forward = 25, _rotate = 180)
+		_nextKeyFrame = backhugToEarthScene(_nextKeyFrame, _isWorn, _gender, "SOSFastErect")
+		_nextKeyFrame = undressScene(_nextKeyFrame, _isWorn, _gender, "SOSSlowErect")
+	endif
+	_nextKeyFrame = endScene(66)
+endfunction 
+
+; scene
+int function setAdjustPosition(int _startKeyFrame, int _forward = 1000, int _rotate = 1000)
+	return setKeyFrame(_startKeyFrame, 0, "", _forward = _forward, _rotate = _rotate)	
+endfunction
+
+int function embarrasedScene(int _startKeyFrame, int _waitKeyFrame)
+	return setKeyFrame(_startKeyFrame, _waitKeyFrame, "00_Embarassed")	
+endfunction 
+
+int function watchBelowScene(int _startKeyFrame, int _waitKeyFrame)
+	return setKeyFrame(_startKeyFrame, _waitKeyFrame, "00_Watch_Low")	
+endfunction 
+
+int function watchRudlyScene(int _startKeyFrame, int _waitKeyFrame)
+	return setKeyFrame(_startKeyFrame, _waitKeyFrame, "01_Watch_Badly")	
+endfunction 
+
+int function giveupScene(int _startKeyFrame, int _waitKeyFrame)
+	return setKeyFrame(_startKeyFrame, _waitKeyFrame, "50_Giveup_A1_S1")	
+endfunction 
+
+int function lookAroundScene(int _startKeyFrame, int _waitKeyFrame)
+	return setKeyFrame(_startKeyFrame, _waitKeyFrame, "00_Look_Around")	
+endfunction 
+
+int function showbodyScene(int _startKeyFrame, int _waitKeyFrame, string _pos, string _SosType = "SOSSlowErect")
+	int _nextKeyFrame = _startKeyFrame
+
+	_nextKeyFrame = setKeyFrame(_nextKeyFrame, _waitKeyFrame, "30_Lure_" + _pos + "S1", _sos = _SosType)
+	return _nextKeyFrame
+endfunction
+
+int function arousedScene(int _startKeyFrame, int _waitKeyFrame, bool _isWorn,  string _gender, string _SosType = "SOSSlowErect")
+	int _nextKeyFrame = _startKeyFrame
+	String naked = ""
+
+	if _isWorn
+		naked = "_Naked"
+	endif 
+
+	_nextKeyFrame = setKeyFrame(_nextKeyFrame, _waitKeyFrame, "00_" + _gender + Utility.RandomInt(1, 2) + naked + "_Aroused", _sos = _SosType)
+
+	return _nextKeyFrame
+endfunction 
+
+int function blowJobScene(int _startKeyFrame, bool _isWorn, string _gender, string _pos, string _SosType = "SOSFastErect")
+	int _nextKeyFrame = _startKeyFrame
+
+	if _gender == "F"
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,15, "40_Blowjob_A1_S1")
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,15, "40_Blowjob_A1_S2")
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,10, "40_Blowjob_A1_S3")
+	else 
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,15, "40_Blowjob_A2_S1", _sos = _SosType)
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,15, "40_Blowjob_A2_S2")
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,10, "40_Blowjob_A2_S3")
+	endif 
+
+	return _nextKeyFrame
+endfunction
+
+int function lureScene(int _startKeyFrame, bool _isWorn, string _gender, string _pos, string _SosType = "SOSSlowErect")
+	int _nextKeyFrame = _startKeyFrame
+
+	_nextKeyFrame = setKeyFrame(_nextKeyFrame, 8, "30_Lure_" + _pos + "S1", _sos = _SosType)
+	_nextKeyFrame = setKeyFrame(_nextKeyFrame, 8, "30_Lure_" + _pos + "S2")
+	_nextKeyFrame = setKeyFrame(_nextKeyFrame, 8, "30_Lure_" + _pos + "S3")
+	_nextKeyFrame = setKeyFrame(_nextKeyFrame, 8, "30_Lure_" + _pos + "S4")
+	return _nextKeyFrame
+endfunction
+
+int function kissScene(int _startKeyFrame, bool _isWorn, string _gender, string _pos, string _SosType = "SOSSlowErect")
+	int _nextKeyFrame = _startKeyFrame
+
+	if _pos == "Long_Kiss"
+		if _gender == "F"
+			_nextKeyFrame = setKeyFrame(_nextKeyFrame, 34, "20_" + _pos + "_A1_S1")
+			_nextKeyFrame = setKeyFrame(_nextKeyFrame, 24, "20_" + _pos + "_A1_S2")
+		else
+			_nextKeyFrame = setKeyFrame(_nextKeyFrame, 34, "21_" + _pos + "_A2_S1", _forward = -1, _sos = _SosType)
+			_nextKeyFrame = setKeyFrame(_nextKeyFrame, 24, "21_" + _pos + "_A2_S2")
+		endif 
+	else 
+		if _gender == "F"
+			_nextKeyFrame = setKeyFrame(_nextKeyFrame, 20, "20_" + _pos + "_A1_S1")
+		else
+			_nextKeyFrame = setKeyFrame(_nextKeyFrame, 20, "21_" + _pos + "_A2_S1", _forward = -1, _sos = _SosType)
+		endif 
+	endif
+	return _nextKeyFrame
+endfunction
+
+int function downToEarthScene(int _startKeyFrame, bool _isWorn, string _gender, string _SosType = "SOSFastErect")
+	int _nextKeyFrame = _startKeyFrame
+
+	if _gender == "F"
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,20, "50_Down_A1_S1")
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,10, "50_Down_A1_S2")
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,10, "50_Down_A1_S3",_action = "undress", _actionIdxOffset = 8)
+	else 
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,20, "51_Down_A2_S1", _sos = _SosType)
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,10, "51_Down_A2_S2", _sos = _SosType)
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,10, "51_Down_A2_S3", _sos = _SosType)
+	endif 
+	return _nextKeyFrame
+endfunction
+
+int function backhugToEarthScene(int _startKeyFrame,bool _isWorn,  string _gender, string _SosType = "SOSFastErect")
+	int _nextKeyFrame = _startKeyFrame
+
+	if _gender == "F"
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,15, "50_BackHug_A1_S1")
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,15, "50_BackHug_A1_S2")
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,2,  "50_BackHug_A1_S3")
+	else 
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,15, "50_BackHug_A2_S1", _sos = _SosType)
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,15, "50_BackHug_A2_S2")
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame,2,  "50_BackHug_A2_S3")
+	endif 
+	return _nextKeyFrame
+endfunction
+
+int function undressVictimScene(int _startKeyFrame, bool _isWorn, string _gender, string _SosType = "SOSFastErect")
+	int _nextKeyFrame = _startKeyFrame
+
+	if _isWorn		
+		if _gender == "F"
+			_nextKeyFrame = setKeyFrame(_nextKeyFrame, 3, "10_Undressed_Stand_A1_S1", _action = "undress", _actionIdxOffset = 1)
+		else 
+			_nextKeyFrame = setKeyFrame(_nextKeyFrame, 3, "11_Undressed_Stand_A2_S1")
+		endif 
+	endif
+	return _nextKeyFrame
+endfunction 
+
+int function undressFaintVictimScene(int _startKeyFrame, bool _isWorn, string _gender, string _SosType = "SOSFastErect")
+	int _nextKeyFrame = _startKeyFrame
+
+	if _isWorn		
+		if _gender == "F"
+			_nextKeyFrame = setKeyFrame(_nextKeyFrame,3, _action = "undress")
+			_nextKeyFrame = setKeyFrame(_nextKeyFrame,1, _action = "50_Giveup_A1_S22")
+		else 
+			_nextKeyFrame = setKeyFrame(_nextKeyFrame,4, "10_Uncover_Cloth")
+		endif 
+	endif
+	return _nextKeyFrame
+endfunction 
+
+int function undressScene(int _startKeyFrame, bool _isWorn, string _gender, string _SosType = "SOSFastErect")
+	int _nextKeyFrame = _startKeyFrame
+	if _isWorn		
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame, 6, "10_" + _gender + "_Undress", _action = "undress", _actionIdxOffset = 5)		
+	endif
+		_nextKeyFrame = setKeyFrame(_nextKeyFrame, 1, "00_" + _gender + "1" + "_Naked_Aroused", _sos= _SosType)
+	return _nextKeyFrame
+endfunction 
+
+int function endScene(int _startKeyFrame)	
+	return setKeyFrame(_startKeyFrame + 6, _aniName = "end")
+endfunction
+
+
+int function setKeyFrame (int _idx, int _offset = 0, String _aniName = "", String _action = "", int _actionIdxOffset = -1, String _sos = "", float _forward = 1000.0, float _up = 1000.0, float _side = 1000.0, float _rotate = 1000.0)
+	actorAnimationArray[_idx]  = _aniName	
+	actorSosArray[_idx] = _sos
+	if _forward != 1000.0
+		actorForwardArray[_idx] = _forward
+	endif 
+	if _side != 1000.0
+		actorSideArray[_idx] = _side
+	endif
+	if _rotate != 1000.0
+		actorRotateArray[_idx] = _rotate
+	endif
+
+	if _actionIdxOffset != -1
+		actorActionArray[_idx + _actionIdxOffset] = _action
+	endif
+
+	return _idx + _offset
+endfunction

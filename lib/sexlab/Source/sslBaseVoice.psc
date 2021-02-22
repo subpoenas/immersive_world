@@ -34,6 +34,7 @@ bool property Creature hidden
 	endFunction
 endProperty
 
+float lastMouseActionTime = 0.0
 function PlayMoan(Actor ActorRef, int Strength = 30, bool IsVictim = false, bool UseLipSync = false, float volume = 1.0)
 	Sound SoundRef = GetSound(Strength, IsVictim)
 	if SoundRef
@@ -42,7 +43,6 @@ function PlayMoan(Actor ActorRef, int Strength = 30, bool IsVictim = false, bool
 			Utility.WaitMenuMode(0.4)
 		else
 			float SavedP = sslBaseExpression.GetPhoneme(ActorRef, 1)
-			; MfgConsoleFunc.SetPhonemeModifier(ActorRef, 0, 1, 20)
 			ActorRef.SetExpressionPhoneme(1, 0.2)
 			Utility.WaitMenuMode(0.1)
 			Sound.SetInstanceVolume(SoundRef.Play(ActorRef), volume)
@@ -50,8 +50,19 @@ function PlayMoan(Actor ActorRef, int Strength = 30, bool IsVictim = false, bool
 			Utility.WaitMenuMode(0.2)
 			TransitDown(ActorRef, 50, 20)
 			Utility.WaitMenuMode(0.1)
-			; MfgConsoleFunc.SetPhonemeModifier(ActorRef, 0, 1, (SavedP*100) as int) ; OLDRIM
 			ActorRef.SetExpressionPhoneme(1, Saved as float) ; SKYRIM SE
+			
+			float currentTimeSec = Utility.GetCurrentRealTime()
+
+			if currentTimeSec - lastMouseActionTime >= 1.5
+				if sslBaseExpression.IsMouthOpen(ActorRef)
+					sslBaseExpression.CloseMouth(ActorRef)
+				else 
+					sslBaseExpression.OpenMouth(ActorRef)
+				endif 
+				
+				lastMouseActionTime = currentTimeSec
+			endif 			
 		endIf
 	endIf
 endFunction

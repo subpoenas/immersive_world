@@ -717,6 +717,7 @@ int function GetLowestPresentRelationshipRank(Actor ActorRef)
 endFunction
 
 function ChangeActors(Actor[] NewPositions)
+	Debug.Notification("ChangeActors")
 	int[] NewGenders = ActorLib.GenderCount(NewPositions)
 	if HasCreature || NewGenders[2] > 0 || PapyrusUtil.AddIntValues(NewGenders) == 0
 		return

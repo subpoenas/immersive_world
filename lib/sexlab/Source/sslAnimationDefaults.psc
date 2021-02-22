@@ -8,6 +8,7 @@ For JSON loading animation instructions, see /data/SKSE/Plugins/SexLab/Animation
 /;
 
 function LoadAnimations()
+	Debug.Notification("Sexlab load animation")
 	; Prepare factory resources (as non creature)
 	PrepareFactory()
 
@@ -30,7 +31,6 @@ function LoadAnimations()
 
 	; DoggyStyle
 	RegisterAnimation("SexLabDoggyStyle")
-	RegisterAnimation("SexLabAggrBehind")
 	RegisterAnimation("SexLabAggrDoggyStyle")
 	RegisterAnimation("ArrokDoggyStyle")
 	RegisterAnimation("LeitoDoggy")
@@ -74,9 +74,9 @@ function LoadAnimations()
 	RegisterCategory("Standing")
 	
 	; Anal
-	RegisterAnimation("ArrokAnal")
 	RegisterAnimation("LeitoDoggyAnal")
 	RegisterAnimation("MitosHugBehind")
+	RegisterAnimation("ForcedVaginaljob")
 	if APPack
 		RegisterAnimation("APAnal")
 		RegisterAnimation("APFaceDown")
@@ -88,6 +88,7 @@ function LoadAnimations()
 	RegisterAnimation("ArrokOral")
 	RegisterAnimation("ArrokLedgeBlowjob")
 	RegisterAnimation("LeitoCunnilingus")
+	RegisterAnimation("ForcedBlowjob")
 	if APPack
 		RegisterAnimation("APBlowjob")
 		RegisterAnimation("APKneelBlowjob")
@@ -104,12 +105,6 @@ function LoadAnimations()
 	endIf
 	RegisterCategory("Boobjob")
 	
-	; Foreplay
-	RegisterAnimation("ArrokForeplay")
-	RegisterAnimation("ArrokSittingForeplay")
-	RegisterAnimation("ArrokStandingForeplay")
-	RegisterCategory("Foreplay")
-
 	; Lesbian
 	RegisterAnimation("ArrokLesbian")
 	RegisterAnimation("ZynLesbian")
@@ -182,6 +177,7 @@ function ArrokBoobjob(int id)
 	Base.Save(id)
 endFunction
 
+
 function ArrokCowgirl(int id)
 	sslBaseAnimation Base = Create(id)
 
@@ -236,28 +232,6 @@ function ArrokDoggyStyle(int id)
 	Base.Save(id)
 endFunction
 
-function ArrokForeplay(int id)
-	sslBaseAnimation Base = Create(id)
-
-	Base.Name    = "Arrok Foreplay"
-
-
-	int a1 = Base.AddPosition(Female)
-	Base.AddPositionStage(a1, "Arrok_Foreplay_A1_S1", 0)
-	Base.AddPositionStage(a1, "Arrok_Foreplay_A1_S2", 0)
-	Base.AddPositionStage(a1, "Arrok_Foreplay_A1_S3", 0)
-	Base.AddPositionStage(a1, "Arrok_Foreplay_A1_S4", 0)
-
-	int a2 = Base.AddPosition(Male) ; -104
-	Base.AddPositionStage(a2, "Arrok_Foreplay_A2_S1", 0, strapon = false, sos = 0)
-	Base.AddPositionStage(a2, "Arrok_Foreplay_A2_S2", 0, strapon = false, sos = 0)
-	Base.AddPositionStage(a2, "Arrok_Foreplay_A2_S3", 0, strapon = false, sos = 5)
-	Base.AddPositionStage(a2, "Arrok_Foreplay_A2_S4", 0, strapon = false, sos = 5)
-
-	Base.SetTags("Arrok,BBP,Foreplay,Oral,Hands,Dick,Laying,Lying,OnBack,Cuddling,LeadIn,CumInMouth")
-
-	Base.Save(id)
-endFunction
 
 function ArrokAggrLegUp(int id)
 	sslBaseAnimation Base = Create(id)
@@ -419,27 +393,6 @@ function ArrokStanding(int id)
 	Base.Save(id)
 endFunction
 
-function ArrokStandingForeplay(int id)
-	sslBaseAnimation Base = Create(id)
-
-	Base.Name    = "Arrok Standing Foreplay"
-
-	int a1 = Base.AddPosition(Female)
-	Base.AddPositionStage(a1, "Arrok_StandingForeplay_A1_S1", 0, silent = true)
-	Base.AddPositionStage(a1, "Arrok_StandingForeplay_A1_S2", 0, silent = true)
-	Base.AddPositionStage(a1, "Arrok_StandingForeplay_A1_S3", 0)
-	Base.AddPositionStage(a1, "Arrok_StandingForeplay_A1_S4", 0)
-
-	int a2 = Base.AddPosition(Male)
-	Base.AddPositionStage(a2, "Arrok_StandingForeplay_A2_S1", 0, silent = true, strapon = false, sos = -1)
-	Base.AddPositionStage(a2, "Arrok_StandingForeplay_A2_S2", 0, silent = true, strapon = false, sos = -1)
-	Base.AddPositionStage(a2, "Arrok_StandingForeplay_A2_S3", 0, silent = true, strapon = false, sos = 5)
-	Base.AddPositionStage(a2, "Arrok_StandingForeplay_A2_S4", 0, silent = true, strapon = false, sos = 5)
-
-	Base.SetTags("Arrok,BBP,Foreplay,Mouth,Penis,Vaginal,Kissing,LeadIn,Standing")
-
-	Base.Save(id)
-endFunction
 
 function ArrokHugFuck(int id)
 	sslBaseAnimation Base = Create(id)
@@ -487,51 +440,6 @@ function ArrokLesbian(int id)
 	Base.Save(id)
 endFunction
 
-function ArrokSittingForeplay(int id)
-	sslBaseAnimation Base = Create(id)
-
-	Base.Name    = "Arrok Sitting Foreplay"
-
-
-	int a1 = Base.AddPosition(Female)
-	Base.AddPositionStage(a1, "Arrok_SittingForeplay_A1_S1", 0)
-	Base.AddPositionStage(a1, "Arrok_SittingForeplay_A1_S2", 0)
-	Base.AddPositionStage(a1, "Arrok_SittingForeplay_A1_S3", 0)
-	Base.AddPositionStage(a1, "Arrok_SittingForeplay_A1_S4", 0)
-
-	int a2 = Base.AddPosition(Male)
-	Base.AddPositionStage(a2, "Arrok_SittingForeplay_A2_S1", 0, strapon = false)
-	Base.AddPositionStage(a2, "Arrok_SittingForeplay_A2_S2", 0, strapon = false)
-	Base.AddPositionStage(a2, "Arrok_SittingForeplay_A2_S3", 0, strapon = false)
-	Base.AddPositionStage(a2, "Arrok_SittingForeplay_A2_S4", 0, strapon = false)
-
-	Base.SetTags("Arrok,BBP,Mouth,Hands,Petting,Handjob,Kissing,Cuddling,Laying,HandsCum,Foreplay,LeadIn")
-
-	Base.Save(id)
-endFunction
-
-function ArrokAnal(int id)
-	sslBaseAnimation Base = Create(id)
-
-	Base.Name    = "Arrok Anal"
-	Base.SoundFX = Squishing
-
-	int a1 = Base.AddPosition(Female, Anal)
-	Base.AddPositionStage(a1, "Arrok_Anal_A1_S1", 0)
-	Base.AddPositionStage(a1, "Arrok_Anal_A1_S2", 0)
-	Base.AddPositionStage(a1, "Arrok_Anal_A1_S3", 0)
-	Base.AddPositionStage(a1, "Arrok_Anal_A1_S4", 0)
-
-	int a2 = Base.AddPosition(Male)
-	Base.AddPositionStage(a2, "Arrok_Anal_A2_S1", -17, silent = true, openMouth = true)
-	Base.AddPositionStage(a2, "Arrok_Anal_A2_S2", -8, sos = 3)
-	Base.AddPositionStage(a2, "Arrok_Anal_A2_S3", -17, sos = 4)
-	Base.AddPositionStage(a2, "Arrok_Anal_A2_S4", -17, sos = 3)
-
-	Base.SetTags("Arrok,TBBP,Sex,Anal,Penis,Kneeling,Standing,Dirty")
-
-	Base.Save(id)
-endFunction
 
 function ArrokLedgeBlowjob(int id)
 	sslBaseAnimation Base = Create(id)
@@ -555,34 +463,39 @@ function ArrokLedgeBlowjob(int id)
 
 	Base.SetBedOffsets(-30.0, 0, -37.0, 0)
 
-	Base.SetTags("Arrok,TBBP,Sex,Penis,Boobs,Oral,Boobjob,Handjob,Blowjob,Facing,CumInMouth,Beds,Dirty")
+	Base.SetTags("Arrok,Sex,Penis,Boobs,Oral,Boobjob,Handjob,Blowjob,Facing,CumInMouth,Beds,Dirty")
 
 	Base.Save(id)
 endFunction
 
-function SexLabAggrBehind(int id)
+
+function ForcedBlowjob(int id)
 	sslBaseAnimation Base = Create(id)
 
-	Base.Name    = "Rough Behind"
-	Base.SoundFX = Squishing
+	Base.Name    = "Forced BlowJob"
 
 
-	int a1 = Base.AddPosition(Female, Anal)
-	Base.AddPositionStage(a1, "AggrBehind_A1_S1", 0)
-	Base.AddPositionStage(a1, "AggrBehind_A1_S2", 0)
-	Base.AddPositionStage(a1, "AggrBehind_A1_S3", 0)
-	Base.AddPositionStage(a1, "AggrBehind_A1_S4", 0)
+	int a1 = Base.AddPosition(Female, Oral)
+	Base.AddPositionStage(a1, "ForcedBJ_A1_S1", 0)
+	Base.AddPositionStage(a1, "ForcedBJ_A1_S2", 0, silent = true, openMouth = true)
+	Base.AddPositionStage(a1, "ForcedBJ_A1_S3", 0, silent = true, openMouth = true)
+	Base.AddPositionStage(a1, "ForcedBJ_A1_S4", 0, silent = true, openMouth = true)
+	Base.AddPositionStage(a1, "ForcedBJ_A1_S5", 0, silent = true, openMouth = true)
+	Base.AddPositionStage(a1, "ForcedBJ_A1_S6", 0, silent = true, openMouth = true)
 
-	int a2 = Base.AddPosition(Male)
-	Base.AddPositionStage(a2, "AggrBehind_A2_S1", -12)
-	Base.AddPositionStage(a2, "AggrBehind_A2_S2", -12)
-	Base.AddPositionStage(a2, "AggrBehind_A2_S3", -12)
-	Base.AddPositionStage(a2, "AggrBehind_A2_S4", -12)
+	int a2 = Base.AddPosition(Male) 
+	Base.AddPositionStage(a2, "ForcedBJ_A2_S1", 0, sos = 2)
+	Base.AddPositionStage(a2, "ForcedBJ_A2_S2", 0, sos = 3)
+	Base.AddPositionStage(a2, "ForcedBJ_A2_S3", 0, sos = 5)
+	Base.AddPositionStage(a2, "ForcedBJ_A2_S4", 0, sos = 7)
+	Base.AddPositionStage(a2, "ForcedBJ_A2_S5", 0, sos = 7)
+	Base.AddPositionStage(a2, "ForcedBJ_A2_S6", 0, sos = 5)
 
-	Base.SetTags("Sex,Aggressive,Default,AggressiveDefault,Anal,Doggystyle,Reverse,Behind,Holding,Kneeling,Standing")
+	Base.SetTags("Force,Aggressive,AggressiveDefault,Sex,Penis,Oral,Boobjob,Handjob,Blowjob,Facing,CumInMouth,Beds,Dirty,Rape")
 
 	Base.Save(id)
 endFunction
+
 
 function SexLabAggrDoggyStyle(int id)
 	sslBaseAnimation Base = Create(id)
@@ -1296,7 +1209,7 @@ function LeitoCunnilingus(int id)
 
 	Base.SetStageTimer(5, 7.0)
 
-	Base.SetTags("Leito,Sex,Pussy,Hands,Mouth,Cunnilingus,Doggystyle,Missionary,Foreplay")
+	Base.SetTags("Leito,Sex,Pussy,Hands,Mouth,Cunnilingus,Doggystyle,Missionary")
 
 	Base.Save(id)
 endFunction
@@ -1659,6 +1572,36 @@ function MitosHugBehind(int id)
 
 	Base.Save(id)
 endFunction
+
+
+function ForcedVaginaljob(int id)
+	sslBaseAnimation Base = Create(id)
+
+	Base.Name = "Force Behind"
+
+	int a1 = Base.AddPosition(Female)
+	Base.AddPositionStage(a1, "ForcedVaginal_A1_S1", 0)
+	Base.AddPositionStage(a1, "ForcedVaginal_A1_S2", 0)
+	Base.AddPositionStage(a1, "ForcedVaginal_A1_S3", 0)
+	Base.AddPositionStage(a1, "ForcedVaginal_A1_S4", 0)
+	Base.AddPositionStage(a1, "ForcedVaginal_A1_S5", 0)
+	Base.AddPositionStage(a1, "ForcedVaginal_A1_S6", 0)
+
+	int a2 = Base.AddPosition(Male)
+	Base.AddPositionStage(a2, "ForcedVaginal_A2_S1", 0, sos = 3)
+	Base.AddPositionStage(a2, "ForcedVaginal_A2_S2", 0, sos = 3)
+	Base.AddPositionStage(a2, "ForcedVaginal_A2_S3", 0, sos = 3)
+	Base.AddPositionStage(a2, "ForcedVaginal_A2_S4", 0, sos = 3)
+	Base.AddPositionStage(a2, "ForcedVaginal_A2_S5", 0, sos = 3)
+	Base.AddPositionStage(a2, "ForcedVaginal_A2_S6", 0, sos = 3)
+
+	Base.SetStageTimer(5, 7.0)
+
+	Base.SetTags("Force,Aggressive,AggressiveDefault,Sex,Straight,Penis,Fetish,Feet,Footjob,Reverse,Laying,Dirty,Rape")
+
+	Base.Save(id)
+endFunction
+
 
 function MitosReverseCowgirl(int id)
 	sslBaseAnimation Base = Create(id)

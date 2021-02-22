@@ -922,7 +922,7 @@ function SetDefaults()
 	RagdollEnd         = false
 	UseMaleNudeSuit    = false
 	UseFemaleNudeSuit  = false
-	UndressAnimation   = false
+	UndressAnimation   = true
 	UseLipSync         = false
 	UseExpressions     = false
 	ScaleActors        = false
@@ -931,7 +931,7 @@ function SetDefaults()
 	DisablePlayer      = false
 	AutoTFC            = false
 	AutoAdvance        = true
-	ForeplayStage      = false
+	ForeplayStage      = true
 	OrgasmEffects      = false
 	RaceAdjustments    = true
 	BedRemoveStanding  = true
