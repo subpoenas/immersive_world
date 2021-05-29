@@ -250,6 +250,7 @@ endFunction
 String[] actorAnimationArray
 String[] actorActionArray
 String[] actorSosArray
+String[] actorExpressArray
 float[]	 actorRotateArray
 float[]	 actorForwardArray
 int   actorArrayIdx = 0
@@ -392,6 +393,7 @@ state Ready
 		actorAnimationArray = new String[90]
 		actorActionArray = new String[90]
 		actorSosArray = new String[90]
+		actorExpressArray = new String[90]
 		actorRotateArray = new Float[90]
 		actorForwardArray = new Float[90]
 	
@@ -485,28 +487,33 @@ state Ready
 		elseif actorAnimationArray[actorArrayIdx] == "undress"
 			Strip()
 		elseif actorAnimationArray[actorArrayIdx] == "redress"
-
-		elseif actorAnimationArray[actorArrayIdx] == "mopen"	; mouth open
-			sslBaseExpression.OpenMouth(ActorRef)
-		elseif actorAnimationArray[actorArrayIdx] == "mclose"	; mouth close
-			sslBaseExpression.CloseMouth(ActorRef)
+			UnStrip()
 		else
 
-			if actorAnimationArray[actorArrayIdx] != ""
-				Debug.SendAnimationEvent(actorRef, actorAnimationArray[actorArrayIdx])		
-			endif 
-	
 			if actorSosArray[actorArrayIdx] != ""
 				Debug.SendAnimationEvent(actorRef, actorSosArray[actorArrayIdx])
 			endif
 
+			if actorExpressArray[actorArrayIdx] != ""
+				if actorExpressArray[actorArrayIdx]  == "open"
+					sslBaseExpression.OpenMouth(ActorRef)
+				elseif actorExpressArray[actorArrayIdx]  == "close"
+					sslBaseExpression.CloseMouth(ActorRef)
+				endif 
+			endif
+				
+			if actorAnimationArray[actorArrayIdx] != ""
+				Debug.SendAnimationEvent(actorRef, actorAnimationArray[actorArrayIdx])		
+			endif 
+
+			; position
 			bool isMoveChanged = false
 
 			if actorForwardArray[actorArrayIdx] < 1000.0
 				Offsets[0] = actorForwardArray[actorArrayIdx]
 				isMoveChanged = true
 			endif
-	
+		
 			if actorRotateArray[actorArrayIdx] < 1000.0
 
 				if Offsets[3] == 180 && actorRotateArray[actorArrayIdx] == 180
@@ -525,7 +532,7 @@ state Ready
 				ActorRef.SetAngle(Loc[3], Loc[4], Loc[5])
 				AttachMarker()
 			endif
-			
+				
 			actorArrayIdx += 1					
 			RegisterForSingleUpdate(1.0)
 		endif
@@ -1605,7 +1612,7 @@ function Initialize()
 	TryToClear()
 endFunction
 
-function Setup()
+function LoadLib()
 	; Reset function Libraries - SexLabQuestFramework
 	if !Config || !ActorLib || !Stats
 		Form SexLabQuestFramework = Game.GetFormFromFile(0xD62, "SexLab.esm")
@@ -1759,10 +1766,10 @@ endfunction
 ;
 ;	solo
 ;
-function soloScene(bool _isWorn, String _gender)			
+function soloScene(bool _isWorn, String _gender)
 	setActorPosition(true)		
 	int _nextKeyFrame = 0
-	_nextKeyFrame = lookAroundScene(_nextKeyFrame, 8)
+	_nextKeyFrame = arousedScene(_nextKeyFrame, 5,_isWorn, _gender)	
 	_nextKeyFrame = undressScene(_nextKeyFrame, _isWorn, _gender, "SOSSlowErect")
 	_nextKeyFrame = endScene(_nextKeyFrame)
 endfunction
@@ -1880,10 +1887,6 @@ endfunction
 
 int function giveupScene(int _startKeyFrame, int _waitKeyFrame)
 	return setKeyFrame(_startKeyFrame, _waitKeyFrame, "50_Giveup_A1_S1")	
-endfunction 
-
-int function lookAroundScene(int _startKeyFrame, int _waitKeyFrame)
-	return setKeyFrame(_startKeyFrame, _waitKeyFrame, "00_Look_Around")	
 endfunction 
 
 int function showbodyScene(int _startKeyFrame, int _waitKeyFrame, string _pos, string _SosType = "SOSSlowErect")
@@ -2023,16 +2026,12 @@ int function endScene(int _startKeyFrame)
 	return setKeyFrame(_startKeyFrame + 6, _aniName = "end")
 endfunction
 
-
-int function setKeyFrame (int _idx, int _offset = 0, String _aniName = "", String _action = "", int _actionIdxOffset = -1, String _sos = "", float _forward = 1000.0, float _up = 1000.0, float _side = 1000.0, float _rotate = 1000.0)
+int function setKeyFrame (int _idx, int _offset = 0, String _aniName = "", String _action = "", int _actionIdxOffset = -1, String _sos = "", float _forward = 1000.0, float _up = 1000.0, float _rotate = 1000.0)
 	actorAnimationArray[_idx]  = _aniName	
 	actorSosArray[_idx] = _sos
 	if _forward != 1000.0
 		actorForwardArray[_idx] = _forward
 	endif 
-	if _side != 1000.0
-		actorSideArray[_idx] = _side
-	endif
 	if _rotate != 1000.0
 		actorRotateArray[_idx] = _rotate
 	endif

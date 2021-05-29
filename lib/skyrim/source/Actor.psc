@@ -718,7 +718,10 @@ Function DrawWeapon() native
 ; 1 - in combat
 ; 2 - searching
 Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
-	init()
+
+	if aeCombatState != 0
+		init()
+	endif
 EndEvent
 
 ; Event that is triggered when this actor sits in the furniture
@@ -738,7 +741,7 @@ Event OnDying(Actor akKiller)
 EndEvent
 
 ; Event received when an actor enters bleedout.
-Event OnEnterBleedout()
+Event OnEnterBleedout()	
 EndEvent
 
 ; Event that is triggered when this actor changes from one location to another
@@ -980,35 +983,64 @@ Function ResetExpressionOverrides() native
 ; Returns all factions with the specified min and max ranks (-128 to 127) 
 Faction[] Function GetFactions(int minRank, int maxRank) native
 
-; Alston
-state alive
-	Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile, bool abPowerAttack, bool abSneakAttack, bool abBashAttack, bool abHitBlocked)
-				
-		; breakable armor
-		if  abPowerAttack || abBashAttack	
-			imsBridge.handleArmorBreak(self, akAggressor as actor, akSource as Weapon, abPowerAttack, abBashAttack )		
+; Alton
+state breakable
+	Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile, bool abPowerAttack, bool abSneakAttack, bool abBashAttack, bool abHitBlocked)				
+		; 방어 행위는 힘이 소요되는 경우이기에, 누적 방어행위는 방어구를 연달아 쉽게 놓칠 수 있음
+		if abHitBlocked	|| abBashAttack
+			imsBridge.handleWeaponDrop(self, akAggressor as actor, akSource as Weapon)
+		; 내구도는 장비별 각기 다르므로, 하나의 장비가 파괴되면, 다른 장비의 내구도는 100%으로 초기화 될 필요가 있음
+		elseif abPowerAttack
+			Actor aggressor = akAggressor as Actor
+			if aggressor.GetActorBase().GetSex() == -1 ; 짐승
+				imsBridge.handleClothWorn(self, aggressor, akSource as Weapon) 
+			else ; 남성/여성
+				armorDurability = imsBridge.handleArmorBroken(self, aggressor, akSource as Weapon, armorDurability)
+			endif
 		endif
 	EndEvent
-endState
 
-Event OnLoad()
-	init()
-EndEvent
+	Event OnEnterBleedout()
+		if imsBridge.isActorFemale(self)
+			RegisterForSingleUpdate(5.0)		
+		endif
+	EndEvent
+
+	Event OnUpdate()		
+		if IsBleedingOut()
+			RegisterForSingleUpdate(2.0)
+		else
+			imsBridge.bleedoutEndAnimation(self) 
+		endif
+	EndEvent
+
+	Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
+		if aeCombatState == 0
+			if IsBleedingOut()
+				imsBridge.bleedoutEndAnimation(self)
+			endif
+			GotoState("")
+		endif
+	EndEvent
+endstate 
 
 ImmersiveBridge imsBridge = None
 bool isPreferedNakedHuman = false
+float armorDurability = 100.0
 function init() 
 
-	if imsBridge == None
-		if HasKeyWordString("ActorTypeNPC")
-			if !isDead()			
-				imsBridge =  (Game.GetFormFromFile(0x0600AA01, "AlstonImmersiveArmorBreak.esp") As ImmersiveBridge)						
-				
-				if imsBridge.isActorNaked(self) 
-					isPreferedNakedHuman = true
-				endif				
-				gotoState("alive")
-			endif 
+	if HasKeyWordString("ActorTypeNPC") && !isDead()		
+		armorDurability = 100.0		
+
+		if imsBridge == None
+			imsBridge =  (Game.GetFormFromFile(0x05005901, "AltonArmorBreak.esp") As ImmersiveBridge)						
+			
+			if imsBridge.isWornHalfNaked(self)
+				isPreferedNakedHuman = true
+			endif
 		endif
+
+		GotoState("breakable")
 	endif
+
 endfunction
