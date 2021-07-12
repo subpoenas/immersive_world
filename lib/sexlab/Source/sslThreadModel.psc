@@ -47,6 +47,8 @@ Sound property SoundFX auto hidden
 string property AdjustKey auto hidden
 string[] property AnimEvents auto hidden
 
+bool property isBedRole auto hidden  ; alton modified
+
 sslBaseAnimation property Animation auto hidden
 sslBaseAnimation property StartingAnimation auto hidden
 sslBaseAnimation[] CustomAnimations
@@ -348,7 +350,9 @@ state Making
 		endIf
 		; Search for nearby bed
 		if !CenterRef && BedStatus[0] != -1
-			CenterOnBed(HasPlayer, 750.0)
+			isBedRole = CenterOnBed(HasPlayer, 750.0)
+		else 
+			isBedRole = false
 		endIf
 		; Center on fallback choices
 		if !CenterRef
@@ -717,7 +721,6 @@ int function GetLowestPresentRelationshipRank(Actor ActorRef)
 endFunction
 
 function ChangeActors(Actor[] NewPositions)
-	Debug.Notification("ChangeActors")
 	int[] NewGenders = ActorLib.GenderCount(NewPositions)
 	if HasCreature || NewGenders[2] > 0 || PapyrusUtil.AddIntValues(NewGenders) == 0
 		return

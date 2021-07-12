@@ -202,8 +202,8 @@ bool function IsBedAvailable(ObjectReference BedRef)
 	endIf
 	; Check if used by a current thread
 	sslThreadController[] Threads = ThreadSlots.Threads
-	int i
-	while i < 15
+	int i = 0
+	while i < 5	; alton modified from 15 to 5
 		if Threads[i].BedRef == BedRef
 			return false
 		endIf

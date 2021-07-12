@@ -25,6 +25,59 @@ int AdjustPos
 bool Adjusted
 bool hkReady
 
+Faction property SfxRoleFaction auto hidden 
+Faction property SfxPositionFaction auto hidden
+Faction property SfxStageFaction auto hidden
+
+Sound 	property SfxPussySound auto hidden
+Sound 	property SfxFuckSound auto hidden
+Sound	property SfxLickSound auto hidden
+Sound	property SfxMouthSound auto hidden
+Sound	property SfxDeepMouthSound auto hidden
+Sound	property SfxAfraidSound auto hidden
+Sound	property SfxHappySound auto hidden
+Sound   property SfxBreathSound auto hidden
+Sound	property SfxBedSound auto hidden
+
+; Topic 	SfxDialogDoggyTopic
+Topic 	property SfxDialogCowgirlTopic auto hidden	; self masterbation
+Topic 	property SfxDialogDoggyTopic auto hidden	; aggressive
+Topic 	property SfxDialogRapeTopic auto hidden		; rape
+Topic 	property SfxDialogTopic auto hidden
+
+int 	property SfxPlayRole auto hidden
+bool    property hasFurnitureRole  auto hidden
+
+; ------------------------------------------------------- ;
+; --- Init                                 --- ;
+; ------------------------------------------------------- ;
+
+event OnInit()	
+	init()
+endEvent
+
+function init()
+	SfxRoleFaction	       = Game.GetFormFromFile(0x0200EFEE, "Sexlab plus.esp") as Faction	
+	SfxPositionFaction     = Game.GetFormFromFile(0x02011599, "Sexlab plus.esp") as Faction
+	SfxStageFaction        = Game.GetFormFromFile(0x020125C0, "Sexlab plus.esp") as Faction
+	
+	SfxPussySound      	   = Game.GetFormFromFile(0x02014617, "Sexlab plus.esp") as Sound
+	SfxFuckSound      	   = Game.GetFormFromFile(0x02007400, "Sexlab plus.esp") as Sound	
+	SfxLickSound           = Game.GetFormFromFile(0x0200842E, "Sexlab plus.esp") as Sound
+	SfxMouthSound          = Game.GetFormFromFile(0x0200842D, "Sexlab plus.esp") as Sound
+	SfxDeepMouthSound      = Game.GetFormFromFile(0x02009456, "Sexlab plus.esp") as Sound
+
+	SfxAfraidSound         = Game.GetFormFromFile(0x02009F20, "Sexlab plus.esp") as Sound
+	SfxHappySound		   = Game.GetFormFromFile(0x02014B7A, "Sexlab plus.esp") as Sound
+
+	SfxBedSound            = Game.GetFormFromFile(0x02007EC8, "Sexlab plus.esp") as Sound
+	SfxBreathSound         = Game.GetFormFromFile(0x02007964, "Sexlab plus.esp") as Sound
+
+	SfxDialogRapeTopic	   = Game.GetFormFromFile(0x0200C4D7, "Sexlab plus.esp") as Topic
+	SfxDialogCowgirlTopic  = Game.GetFormFromFile(0x02011597, "Sexlab plus.esp") as Topic
+	SfxDialogDoggyTopic	   = Game.GetFormFromFile(0x02011AFC, "Sexlab plus.esp") as Topic
+endfunction
+
 ; ------------------------------------------------------- ;
 ; --- Thread Starter                                  --- ;
 ; ------------------------------------------------------- ;
@@ -52,6 +105,7 @@ state Prepare
 			SetAnimation()
 			StartingAnimation = none
 		endIf
+
 		Log(AdjustKey, "Adjustment Profile")
 		; Begin actor prep
 		SyncEvent(kPrepareActor, 30.0)
@@ -131,7 +185,36 @@ state Advancing
 	function SyncDone()
 		RegisterForSingleUpdate(0.1)
 	endFunction
-	event OnUpdate()
+
+	event OnUpdate()		
+		string[] aniTags = Animation.GetRawTags()		
+		SfxPlayRole = -1
+		HasPlayer = false
+		hasFurnitureRole = false
+		SfxDialogTopic = none
+		; 0: missionary, 1: cowgirl, 2: aggressive, 3: rape, 4:doggy, 5: blowjob, 6:kiss		
+			
+		if aniTags.Find("Rape") != -1
+			SfxPlayRole = 3		
+			SfxDialogTopic = SfxDialogRapeTopic			
+		elseif aniTags.Find("Doggy") != -1
+			SfxPlayRole = 4
+			SfxDialogTopic = SfxDialogDoggyTopic
+		elseif aniTags.Find("Blowjob") != -1
+			SfxPlayRole = 5		
+		elseif aniTags.Find("Cowgirl") != -1
+			SfxPlayRole = 1	
+			SfxDialogTopic = SfxDialogCowgirlTopic
+		elseif aniTags.Find("Aggressive") != -1
+			SfxPlayRole = 2
+		elseif aniTags.Find("Missionary") != -1
+			SfxPlayRole = 0
+		endif 		
+
+		if isBedRole || aniTags.Find("Furniture") || aniTags.Find("Chair")
+			hasFurnitureRole = true
+		endif
+		
 		HookStageStart()
 		Action("Animating")
 		SendThreadEvent("StageStart")
@@ -551,12 +634,10 @@ function SetAnimation(int aid = -1)
 	; Set active animation
 	Animation = Animations[aid]
 	; Inform player of animation being played now
-	if HasPlayer
+	if DebugMode || HasPlayer
 		string msg = "Playing Animation: " + Animation.Name
 		SexLabUtil.PrintConsole(msg)
-		if DebugMode
-			Debug.Notification(msg)
-		endIf
+		Debug.Notification(msg)
 	endIf
 	; Update animation info
 	RecordSkills()

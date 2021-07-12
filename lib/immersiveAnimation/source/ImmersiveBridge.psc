@@ -1,5 +1,7 @@
 Scriptname ImmersiveBridge extends Quest
 
+Import Utility
+
 Actor Property Player  Auto
 
 int Version
@@ -11,26 +13,22 @@ EndFunction
 ImmersiveBreakArmor 		imsBreakArmorQuest =  none
 
 event OnInit()
-	Debug.Notification("ImmersiveBridge Load..")		
+	Debug.Notification("ImmersiveMod Load..")		
 	init()
 endEvent
 
 function init()
 	if imsBreakArmorQuest == none
-		imsBreakArmorQuest =  	Game.GetFormFromFile(0x05005900, "AltonArmorBreak.esp") As ImmersiveBreakArmor
+		imsBreakArmorQuest =  Game.GetFormFromFile(0x05005900, "AltonArmorBreak.esp") As ImmersiveBreakArmor
 	endif
 endfunction
 
-bool function handleWeaponDrop (actor _victim, actor _aggressor, weapon _weapon)
-	return imsBreakArmorQuest.handleWeaponDrop(_victim, _aggressor, _weapon)
+bool function handleWeaponDrop (actor _victim, actor _aggressor, form _akSource, int hitCount)
+	 return imsBreakArmorQuest.handleWeaponDrop(_victim, _aggressor, _akSource, hitCount)
 endfunction
 
-bool function handleClothWorn (actor _victim, actor _aggressor, weapon _weapon)
-	return imsBreakArmorQuest.handleClothWorn(_victim, _aggressor, _weapon)
-endfunction
-
-float function handleArmorBroken (actor _victim, actor _aggressor, weapon _weapon, float _armordurability)
-	return imsBreakArmorQuest.handleArmorBroken(_victim, _aggressor, _weapon, _armordurability)
+bool function handleArmorBroken (actor _victim, actor _aggressor, form _akSource, int hitCount)
+	return imsBreakArmorQuest.handleArmorBroken(_victim, _aggressor, _akSource, hitCount)
 endfunction
 
 bool function isActorFemale(Actor _actor) 
@@ -44,20 +42,3 @@ endfunction
 bool function isWornHalfNakedArmor(Actor _actor)
 	return imsBreakArmorQuest.isWornHalfNakedArmor(_actor)
 endfunction
-
-function nakedCoverAnimation(Actor _actor) 	
-	return imsBreakArmorQuest.nakedCoverAnimation(_actor)
-endfunction
-
-function bleedoutStartAnimation(Actor _actor) 	
-	return imsBreakArmorQuest.bleedoutStartAnimation(_actor)
-endfunction
-
-function bleedoutEndAnimation(Actor _actor) 	
-	return imsBreakArmorQuest.bleedoutEndAnimation(_actor)
-endfunction
-
-function defaultAnimation(Actor _actor) 	
-	return imsBreakArmorQuest.defaultAnimation(_actor)
-endfunction
-

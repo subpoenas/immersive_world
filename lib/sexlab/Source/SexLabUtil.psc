@@ -9,7 +9,7 @@ int function GetVersion() global
 endFunction
 
 string function GetStringVer() global
-	return "New Sexlab 1.0"
+	return "1.63 SE dev beta 8"
 endFunction
 
 bool function SexLabIsActive() global
@@ -77,6 +77,14 @@ bool function IsValidActor(Actor ActorRef) global
 	return GetAPI().ActorLib.IsValidActor(ActorRef)
 endFunction
 
+bool function HasCreature(Actor ActorRef) global
+	return sslCreatureAnimationSlots.HasCreatureType(ActorRef)
+endFunction
+
+bool function HasRace(Race RaceRef) global
+	return sslCreatureAnimationSlots.HasRaceType(RaceRef)
+endFunction
+
 string function MakeGenderTag(Actor[] Positions) global
 	int[] Genders = GetAPI().ActorLib.GenderCount(Positions)
 	return GetGenderTag(Genders[1], Genders[0], Genders[2])
@@ -99,6 +107,23 @@ string function GetGenderTag(int Females = 0, int Males = 0, int Creatures = 0) 
 	return Tag
 endFunction
 
+string function GetReverseGenderTag(int Females = 0, int Males = 0, int Creatures = 0) global
+	string Tag
+	while Creatures > 0
+		Creatures -= 1
+		Tag += "C"
+	endWhile
+	while Males > 0
+		Males -= 1
+		Tag += "M"
+	endWhile
+	while Females > 0
+		Females -= 1
+		Tag += "F"
+	endWhile
+	return Tag
+endFunction
+
 bool function IsActor(Form FormRef) global
 	if FormRef
 		int Type = FormRef.GetType()
@@ -107,7 +132,7 @@ bool function IsActor(Form FormRef) global
 	return false
 endFunction
 
-bool function IsEssential(Actor ActorRef, bool Strict = false) global
+bool function IsImportant(Actor ActorRef, bool Strict = false) global
 	if ActorRef == Game.GetPlayer()
 		return true
 	elseIf !ActorRef || ActorRef.IsDead() || ActorRef.IsDeleted() || ActorRef.IsChild()
@@ -153,7 +178,50 @@ function Wait(float seconds) global
 	endWhile
 endFunction
 
+function Log(string msg, string source, string type = "NOTICE", string display = "trace", bool minimal = true) global
+	if StringUtil.Find(display, "trace") != -1
+		if minimal
+			Debug.Trace("-- SexLab "+type+"-- "+source+": "+msg)
+		else
+			Debug.Trace("--- SexLab "+source+" --------------------------------")
+			Debug.Trace(" "+type+":")
+			Debug.Trace("   "+msg)
+			Debug.Trace("-----------------------------------------------------------")
+		endIf
+	endIf
+	if StringUtil.Find(display, "box") != -1
+		Debug.MessageBox(type+" "+source+": "+msg)
+	endIf
+	if StringUtil.Find(display, "notif") != -1
+		Debug.Notification(type+": "+msg)
+	endIf
+	if StringUtil.Find(display, "stack") != -1
+		Debug.TraceStack("-- SexLab "+type+"-- "+source+": "+msg)
+	endIf
+	if StringUtil.Find(display, "console") != -1
+		SexLabUtil.PrintConsole(type+" SexLab "+source+": "+msg)
+	endIf
+endFunction
+
+function DebugLog(string Log, string Type = "NOTICE", bool DebugMode = false) global
+	Log = Type+": "+Log
+	if DebugMode
+		SexLabUtil.PrintConsole(Log)
+	endIf
+	if Type == "FATAL" || Type == "ERROR" || Type == "DEPRECATED"
+		Debug.TraceStack("SEXLAB - "+Log)
+	else
+		Debug.Trace("SEXLAB - "+Log)
+	endIf
+endFunction
+
 float function Timer(float Timestamp, string Log) global
 	float i = Utility.GetCurrentRealTime()
+	DebugLog(Log, "["+(i - Timestamp)+"]", true)
 	return i
+endFunction
+
+; Deprecated
+function EnableFreeCamera(bool Enabling = true, float sucsm = 5.0) global
+	return MiscUtil.SetFreeCameraState(Enabling, sucsm)
 endFunction

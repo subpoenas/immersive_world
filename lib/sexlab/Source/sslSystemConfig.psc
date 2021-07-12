@@ -51,7 +51,6 @@ bool property DebugMode hidden
 	endFunction
 endProperty
 
-
 Faction property AnimatingFaction auto
 Faction property GenderFaction auto
 Faction property ForbiddenFaction auto
@@ -914,7 +913,7 @@ function SetDefaults()
 	DebugMode = true
 
 	; Booleans
-	RestrictAggressive = true
+	RestrictAggressive = false
 	; AllowCreatures     = false
 	NPCSaveVoice       = false
 	UseStrapons        = true
@@ -922,16 +921,16 @@ function SetDefaults()
 	RagdollEnd         = false
 	UseMaleNudeSuit    = false
 	UseFemaleNudeSuit  = false
-	UndressAnimation   = true
-	UseLipSync         = false
-	UseExpressions     = false
+	UndressAnimation   = false
+	UseLipSync         = true
+	UseExpressions     = true
 	ScaleActors        = false
 	UseCum             = true
 	AllowFFCum         = false
 	DisablePlayer      = false
 	AutoTFC            = false
 	AutoAdvance        = true
-	ForeplayStage      = true
+	ForeplayStage      = false
 	OrgasmEffects      = false
 	RaceAdjustments    = true
 	BedRemoveStanding  = true

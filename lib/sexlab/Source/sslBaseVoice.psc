@@ -5,13 +5,12 @@ scriptname sslBaseVoice extends sslBaseObject
 ;  - NVM, not updated for current SKSE64, and buggy accoring to comments.
 ;  - Maybe https://www.nexusmods.com/skyrimspecialedition/mods/12919
 
-Sound property Hot auto
+Sound property Victim auto
 Sound property Mild auto
 Sound property Medium auto
-
-; Sound[] property HotPack
-; Sound[] property MildPack
-; Sound[] property VictimPack
+Sound property Wild auto
+Sound property Hot auto
+Sound property Orgasm auto
 
 Topic property LipSync auto hidden
 
@@ -34,81 +33,50 @@ bool property Creature hidden
 	endFunction
 endProperty
 
-float lastMouseActionTime = 0.0
-function PlayMoan(Actor ActorRef, int Strength = 30, bool IsVictim = false, bool UseLipSync = false, float volume = 1.0)
-	Sound SoundRef = GetSound(Strength, IsVictim)
+function PlayMoan(Actor ActorRef, int Strength = 30, bool UseLipSync = false, float volume = 1.0)
+	Sound SoundRef = GetSound(Strength)	
+
 	if SoundRef
+		if SoundRef == Hot || SoundRef == Orgasm
+			volume += 0.2
+		else 
+			volume += Utility.RandomFloat(-0.1, 0.1)
+		endif
+
 		if !UseLipSync
-			Sound.SetInstanceVolume(SoundRef.Play(ActorRef), volume)
-			Utility.WaitMenuMode(0.4)
+			Sound.SetInstanceVolume(SoundRef.Play(ActorRef), volume)	; modified by alton
+			; Utility.WaitMenuMode(0.4)
 		else
-			float SavedP = sslBaseExpression.GetPhoneme(ActorRef, 1)
+			float SavedP = sslBaseExpression.GetPhoneme(ActorRef, 1)			
 			ActorRef.SetExpressionPhoneme(1, 0.2)
-			Utility.WaitMenuMode(0.1)
-			Sound.SetInstanceVolume(SoundRef.Play(ActorRef), volume)
-			TransitUp(ActorRef, 20, 50)
-			Utility.WaitMenuMode(0.2)
-			TransitDown(ActorRef, 50, 20)
-			Utility.WaitMenuMode(0.1)
+			; Utility.WaitMenuMode(0.1)			
+
+			Sound.SetInstanceVolume(SoundRef.Play(ActorRef), volume)	; modified by alton
 			ActorRef.SetExpressionPhoneme(1, Saved as float) ; SKYRIM SE
-			
-			float currentTimeSec = Utility.GetCurrentRealTime()
-
-			if currentTimeSec - lastMouseActionTime >= 1.5
-				if sslBaseExpression.IsMouthOpen(ActorRef)
-					sslBaseExpression.CloseMouth(ActorRef)
-				else 
-					sslBaseExpression.OpenMouth(ActorRef)
-				endif 
-				
-				lastMouseActionTime = currentTimeSec
-			endif 			
 		endIf
 	endIf
 endFunction
 
-function Moan(Actor ActorRef, int Strength = 30, bool IsVictim = false)
-	PlayMoan(ActorRef, Strength, Isvictim, Config.UseLipSync)
+function Moan(Actor ActorRef, int Strength = 30, bool IsVictim = false, float volume = 0.5)
+	PlayMoan(ActorRef, Strength, Config.UseLipSync, volume)
 endFunction
 
-function MoanNoWait(Actor ActorRef, int Strength = 30, bool IsVictim = false, float Volume = 1.0)
-	if Volume > 0.0
-		Sound SoundRef = GetSound(Strength, IsVictim)
-		if SoundRef
-			LipSync(ActorRef, Strength)
-			Sound.SetInstanceVolume(SoundRef.Play(ActorRef), Volume)
-		endIf
-	endIf
-endFunction
-
-Sound function GetSound(int Strength, bool IsVictim = false)
-	if Strength > 75 && Hot
-		return Hot
-	elseIf IsVictim && Medium
+Sound function GetSound(int Strength)
+	if Strength <= 30
+		return Mild
+	elseIf Strength <= 50
 		return Medium
+	elseIf Strength <= 85
+		return Wild
+	elseIf Strength <= 100
+		return Hot
+	else
+		return Mild
 	endIf
-	return Mild
 endFunction
 
-function LipSync(Actor ActorRef, int Strength, bool ForceUse = false)
-	if (ForceUse || Config.UseLipSync) && Game.GetCameraState() != 3
-		ActorRef.Say(LipSync)
-	endIf
-endFunction
-
-function TransitUp(Actor ActorRef, int from, int to)
-	while from < to
-		from += 2
-		; MfgConsoleFunc.SetPhonemeModifier(ActorRef, 0, 1, from) ; OLDRIM
-		ActorRef.SetExpressionPhoneme(1, (from as float / 100.0)) ; SKYRIM SE
-	endWhile
-endFunction
-function TransitDown(Actor ActorRef, int from, int to)
-	while from > to
-		from -= 2
-		; MfgConsoleFunc.SetPhonemeModifier(ActorRef, 0, 1, from) ; OLDRIM
-		ActorRef.SetExpressionPhoneme(1, (from as float / 100.0)) ; SKYRIM SE
-	endWhile
+Sound function GetOrgasmSound()
+	return Orgasm
 endFunction
 
 bool function CheckGender(int CheckGender)
@@ -164,6 +132,7 @@ function Initialize()
 	Mild    = none
 	Medium  = none
 	Hot     = none
+	Orgasm  = none
 	RaceKeys = Utility.CreateStringArray(0)
 	parent.Initialize()
 	LipSync = Config.LipSync

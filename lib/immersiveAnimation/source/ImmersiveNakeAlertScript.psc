@@ -144,7 +144,6 @@ function undoOverridePackages (actor  _actor)
 	ActorUtil.ClearPackageOverride(_actor)
 	_actor.EvaluatePackage()
 	wait(1.0)
-	
 endfunction 
 
 function handleArmorBreak (actor _victim, actor _aggressor, weapon _weapon, bool _abHitPower, bool _abHitBlocked, int _actorVoiceType)

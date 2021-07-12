@@ -658,11 +658,14 @@ sslBaseAnimation function CopyAnimation(sslBaseAnimation Copy, sslBaseAnimation 
 endFunction
 
 sslBaseVoice function CopyVoice(sslBaseVoice Copy, sslBaseVoice Orig)
-	Copy.Name   = Orig.Name
-	Copy.Gender = Orig.Gender
-	Copy.Mild   = Orig.Mild
-	Copy.Medium = Orig.Medium
-	Copy.Hot    = Orig.Hot
+	Copy.Name   	= Orig.Name
+	Copy.Gender 	= Orig.Gender
+	Copy.Victim   	= Orig.Victim
+	Copy.Mild   	= Orig.Mild
+	Copy.Medium 	= Orig.Medium
+	Copy.Wild 		= Orig.Wild
+	Copy.Hot    	= Orig.Hot
+	Copy.Orgasm 	= Orig.Orgasm
 	Copy.AddTags(Orig.GetTags())
 	return Copy
 endFunction

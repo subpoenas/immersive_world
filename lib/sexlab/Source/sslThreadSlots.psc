@@ -124,26 +124,17 @@ function Setup()
 		Config = SexLabQuestFramework as sslSystemConfig
 		SexLab = SexLabQuestFramework as SexLabFramework
 	endIf
+	; alton modified from 15 to 5
 	; Slot Form IDs
-	int[] SlotFormID = new int[15]
+	int[] SlotFormID = new int[5]
 	SlotFormID[0]  = 0x61EEF
 	SlotFormID[1]  = 0x62452
 	SlotFormID[2]  = 0x6C62C
 	SlotFormID[3]  = 0x6C62D
 	SlotFormID[4]  = 0x6C62E
-	SlotFormID[5]  = 0x6C62F
-	SlotFormID[6]  = 0x6C630
-	SlotFormID[7]  = 0x6C631
-	SlotFormID[8]  = 0x6C632
-	SlotFormID[9]  = 0x6C633
-	SlotFormID[10] = 0x6C634
-	SlotFormID[11] = 0x6C635
-	SlotFormID[12] = 0x6C636
-	SlotFormID[13] = 0x6C637
-	SlotFormID[14] = 0x6C638
 
 	; Get and stop all thread quest slots
-	Slots = new sslThreadController[15]
+	Slots = new sslThreadController[5]
 	int i = Slots.Length
 	while i
 		i -= 1
@@ -172,7 +163,7 @@ function Setup()
 endFunction
 
 bool function TestSlots()
-	return Slots.Length == 15 && Slots.Find(none) == -1
+	return Slots.Length == 5 && Slots.Find(none) == -1
 endFunction
 
 state Locked

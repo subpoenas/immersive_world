@@ -113,20 +113,6 @@ function OpenMouth(Actor ActorRef) global
 	Utility.WaitMenuMode(0.1)
 endFunction
 
-function OpenMouthTiny(Actor ActorRef) global
-	; ClearPhoneme(ActorRef)
-	ActorRef.SetExpressionOverride(16, 30)  ; Skyrim SE
-	; MfgConsoleFunc.SetPhonemeModifier(ActorRef, 0, 1, 60) ; Oldrim
-	Utility.WaitMenuMode(0.1)
-endFunction
-
-function OpenMouthMiddle(Actor ActorRef) global
-	; ClearPhoneme(ActorRef)
-	ActorRef.SetExpressionOverride(16, 50)  ; Skyrim SE
-	; MfgConsoleFunc.SetPhonemeModifier(ActorRef, 0, 1, 60) ; Oldrim
-	Utility.WaitMenuMode(0.1)
-endFunction
-
 function CloseMouth(Actor ActorRef) global
 	ActorRef.SetExpressionOverride(7, 50) ; Skyrim SE
 	; MfgConsoleFunc.SetPhonemeModifier(ActorRef, 0, 1, 0) ; Oldrim

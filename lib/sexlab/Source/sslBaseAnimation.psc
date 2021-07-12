@@ -70,6 +70,11 @@ int function FlagIndex(int Stage, int Slot)
 	return ((PapyrusUtil.ClampInt(Stage, 1, Stages) - 1) * 6) + Slot
 endfunction
 
+int function SfxTimeIndex(int Stage, int Slot)
+	return ((PapyrusUtil.ClampInt(Stage, 1, Stages) - 1) * 2) + Slot
+endfunction
+
+
 ; ------------------------------------------------------- ;
 ; --- Animation Events                                --- ;
 ; ------------------------------------------------------- ;
@@ -472,6 +477,17 @@ int[] function PositionFlags(int[] Output, string AdjustKey, int Position, int S
 endFunction
 
 ; ------------------------------------------------------- ;
+; --- Sfx Times                                           --- ;
+; ------------------------------------------------------- ;
+
+String[] function PositionSfxTimes(String[] Output, int Position, int Stage)
+	int i = SfxTimeIndex(Stage, 0)
+	String[] sfxTimes = SfxTimeArray(Position)	
+	Output[0] = sfxTimes[i]
+	return Output
+endFunction
+
+; ------------------------------------------------------- ;
 ; --- Animation Info                                  --- ;
 ; ------------------------------------------------------- ;
 
@@ -667,6 +683,7 @@ endFunction
 int aid
 int oid
 int fid
+int sid
 string[] GenderTags
 
 bool Locked
@@ -682,6 +699,7 @@ int function AddPosition(int Gender = 0, int AddCum = -1)
 	
 	oid = 0
 	fid = 0
+	sid = 0
 
 	Genders[Gender]   = Genders[Gender] + 1
 	Positions[Actors] = Gender
@@ -719,7 +737,7 @@ int function AddCreaturePosition(string RaceKey, int Gender = 2, int AddCum = -1
 	return pid
 endFunction
 
-function AddPositionStage(int Position, string AnimationEvent, float forward = 0.0, float side = 0.0, float up = 0.0, float rotate = 0.0, bool silent = false, bool openmouth = false, bool strapon = true, int sos = 0)
+function AddPositionStage(int Position, string AnimationEvent, float forward = 0.0, float side = 0.0, float up = 0.0, float rotate = 0.0, bool silent = false, bool openmouth = false, bool strapon = true, int sos = 0, String sndTimeSlices = "")
 	; Out of range position or empty animation event
 	if Position == -1 || Position >= 5 || AnimationEvent == ""
 		Log("FATAL: Invalid arguments!", "AddPositionStage("+Position+", "+AnimationEvent+")")
@@ -739,6 +757,12 @@ function AddPositionStage(int Position, string AnimationEvent, float forward = 0
 			Log("WARNING: Offsets position overflow, resizing! - Current offsets: "+Offsets0, "AddPositionStage("+Position+", "+AnimationEvent+")")
 			Offsets0 = PapyrusUtil.ResizeFloatArray(Offsets0, (Offsets0.Length + 32))
 		endIf
+
+		; Offset stage overflow
+		if (sid + kSfxTimesEnd) >= SfxTimes0.Length
+			Log("WARNING: Offsets position overflow, resizing! - Current offsets: "+SfxTimes0, "AddPositionStage("+Position+", "+AnimationEvent+")")
+			SfxTimes0 = PapyrusUtil.ResizeStringArray(SfxTimes0, (SfxTimes0.Length + 32))
+		endIf		
 	endIf
 
 	; Save stage animation event
@@ -769,6 +793,11 @@ function AddPositionStage(int Position, string AnimationEvent, float forward = 0
 	Offsets[oid + 2] = up
 	Offsets[oid + 3] = rotate
 	oid += kOffsetEnd
+
+	; Save sfx time 
+	String[] sfxTimes = SfxTimeArray(Position)
+	sfxTimes[sid + 0] = sndTimeSlices
+	sid += kSfxTimesEnd	
 endFunction
 
 function Save(int id = -1)
@@ -786,6 +815,7 @@ function Save(int id = -1)
 	; Finalize config data
 	Flags0     = Utility.ResizeIntArray(Flags0, (Stages * kFlagEnd))
 	Offsets0   = Utility.ResizeFloatArray(Offsets0, (Stages * kOffsetEnd))
+	SfxTimes0   = Utility.ResizeStringArray(SfxTimes0, (Stages * kSfxTimesEnd))
 	Animations = Utility.ResizeStringArray(Animations, aid)
 	; Positions  = Utility.ResizeIntArray(Positions, Actors)
 	; LastKeys   = Utility.ResizeStringArray(LastKeys, Actors)
@@ -872,6 +902,7 @@ function Initialize()
 	aid       = 0
 	oid       = 0
 	fid       = 0
+	sid 	  = 0
 	Actors    = 0
 	Stages    = 0
 	RaceType  = ""
@@ -903,6 +934,12 @@ function Initialize()
 	Offsets2 = Utility.CreateFloatArray(0)
 	Offsets3 = Utility.CreateFloatArray(0)
 	Offsets4 = Utility.CreateFloatArray(0)
+
+	SfxTimes0 = Utility.CreateStringArray(0)
+	SfxTimes1 = Utility.CreateStringArray(0)
+	SfxTimes2 = Utility.CreateStringArray(0)
+	SfxTimes3 = Utility.CreateStringArray(0)
+	SfxTimes4 = Utility.CreateStringArray(0)
 
 	Locked = false
 
@@ -1022,6 +1059,34 @@ bool function CheckByTags(int ActorCount, string[] Search, string[] Suppress, bo
 	return Enabled && ActorCount == PositionCount && CheckTags(Search, RequireAll) && (Suppress.Length < 1 || !HasOneTag(Suppress))
 endFunction
 
+
+int property kSfxTimesEnd hidden
+	int function get()
+		return 2
+	endFunction
+endProperty
+
+String[] SfxTimes0
+String[] SfxTimes1
+String[] SfxTimes2
+String[] SfxTimes3
+String[] SfxTimes4
+
+string[] function SfxTimeArray(int Position)
+	if Position == 0
+		return SfxTimes0
+	elseIf Position == 1
+		return SfxTimes1
+	elseIf Position == 2
+		return SfxTimes2
+	elseIf Position == 3
+		return SfxTimes3
+	elseIf Position == 4
+		return SfxTimes4
+	endIf
+	return Utility.CreateStringArray(0)
+endFunction
+
 int[] Flags0
 int[] Flags1
 int[] Flags2
@@ -1055,20 +1120,6 @@ int[] function FlagsArray(int Position)
 	return Utility.CreateIntArray(0)
 endFunction
 
-function FlagsSave(int Position, int[] Flags)
-	if Position == 0
-		Flags0 = Flags
-	elseIf Position == 1
-		Flags1 = Flags
-	elseIf Position == 2
-		Flags2 = Flags
-	elseIf Position == 3
-		Flags3 = Flags
-	elseIf Position == 4
-		Flags4 = Flags
-	endIf
-endFunction
-
 float[] Offsets0
 float[] Offsets1
 float[] Offsets2
@@ -1100,37 +1151,28 @@ float[] function OffsetsArray(int Position)
 	return Utility.CreateFloatArray(0)
 endFunction
 
-function OffsetsSave(int Position, float[] Offsets)
-	if Position == 0
-		Offsets0 = Offsets
-	elseIf Position == 1
-		Offsets1 = Offsets
-	elseIf Position == 2
-		Offsets2 = Offsets
-	elseIf Position == 3
-		Offsets3 = Offsets
-	elseIf Position == 4
-		Offsets4 = Offsets
-	endIf
-endFunction
-
 function InitArrays(int Position)
 	if Position == 0
 		Flags0     = new int[128]
 		Offsets0   = new float[128]
+		SfxTimes0 = new String[128]
 		Animations = new string[128]
 	elseIf Position == 1
 		Flags1   = Utility.CreateIntArray((Stages * kFlagEnd))
 		Offsets1 = Utility.CreateFloatArray((Stages * kOffsetEnd))
+		SfxTimes1 = Utility.CreateStringArray((Stages * kSfxTimesEnd))
 	elseIf Position == 2
 		Flags2   = Utility.CreateIntArray((Stages * kFlagEnd))
 		Offsets2 = Utility.CreateFloatArray((Stages * kOffsetEnd))
+		SfxTimes2 = Utility.CreateStringArray((Stages * kSfxTimesEnd))
 	elseIf Position == 3
 		Flags3   = Utility.CreateIntArray((Stages * kFlagEnd))
 		Offsets3 = Utility.CreateFloatArray((Stages * kOffsetEnd))
+		SfxTimes3 = Utility.CreateStringArray((Stages * kSfxTimesEnd))
 	elseIf Position == 4
 		Flags4   = Utility.CreateIntArray((Stages * kFlagEnd))
 		Offsets4 = Utility.CreateFloatArray((Stages * kOffsetEnd))
+		SfxTimes4 = Utility.CreateStringArray((Stages * kSfxTimesEnd))
 	endIf
 endFunction
 
