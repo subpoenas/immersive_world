@@ -931,7 +931,7 @@ function SetDefaults()
 	AutoTFC            = false
 	AutoAdvance        = true
 	ForeplayStage      = false
-	OrgasmEffects      = false
+	OrgasmEffects      = true
 	RaceAdjustments    = true
 	BedRemoveStanding  = true
 	UseCreatureGender  = false

@@ -5,7 +5,7 @@ scriptname sslBaseVoice extends sslBaseObject
 ;  - NVM, not updated for current SKSE64, and buggy accoring to comments.
 ;  - Maybe https://www.nexusmods.com/skyrimspecialedition/mods/12919
 
-Sound property Victim auto
+Sound property Lead auto
 Sound property Mild auto
 Sound property Medium auto
 Sound property Wild auto
@@ -35,12 +35,10 @@ endProperty
 
 function PlayMoan(Actor ActorRef, int Strength = 30, bool UseLipSync = false, float volume = 1.0)
 	Sound SoundRef = GetSound(Strength)	
-
+	
 	if SoundRef
 		if SoundRef == Hot || SoundRef == Orgasm
-			volume += 0.2
-		else 
-			volume += Utility.RandomFloat(-0.1, 0.1)
+			volume += 0.1
 		endif
 
 		if !UseLipSync
@@ -62,11 +60,13 @@ function Moan(Actor ActorRef, int Strength = 30, bool IsVictim = false, float vo
 endFunction
 
 Sound function GetSound(int Strength)
-	if Strength <= 30
+	if Strength <= 15
+		return Lead
+	elseif Strength <= 30
 		return Mild
-	elseIf Strength <= 50
+	elseIf Strength <= 60
 		return Medium
-	elseIf Strength <= 85
+	elseIf Strength <= 80
 		return Wild
 	elseIf Strength <= 100
 		return Hot

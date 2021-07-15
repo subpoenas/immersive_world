@@ -660,7 +660,7 @@ endFunction
 sslBaseVoice function CopyVoice(sslBaseVoice Copy, sslBaseVoice Orig)
 	Copy.Name   	= Orig.Name
 	Copy.Gender 	= Orig.Gender
-	Copy.Victim   	= Orig.Victim
+	Copy.Lead   	= Orig.Lead
 	Copy.Mild   	= Orig.Mild
 	Copy.Medium 	= Orig.Medium
 	Copy.Wild 		= Orig.Wild

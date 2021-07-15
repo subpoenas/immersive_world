@@ -37,7 +37,7 @@ bool function handleArmorBroken(actor _victim, actor _aggressor, form _akSource,
 				actorArmorList[2]	= _victim.GetWornForm(0x00000010) As Armor	; actorArm					
 				actorArmorList[3] 	= _victim.GetWornForm(0x00200000) as Armor	; actorChest
 				actorArmorList[4]	= _victim.GetWornForm(0x00000004) as Armor	; actorArmor
-				actorArmorList[5] 	= _victim.GetWornForm(0x10000000) as Armor	; actorPanty
+				actorArmorList[5] 	= _victim.GetWornForm(0x00400000) as Armor	; actorPanty
 				actorArmorList[6] 	= _victim.GetWornForm(0x00004000) as Armor	; actorFace
 				
 				int idx = Utility.RandomInt(0, 4)
@@ -67,7 +67,7 @@ bool function handleArmorBroken(actor _victim, actor _aggressor, form _akSource,
 			actorArmorList[2]	= _victim.GetWornForm(0x00000010) As Armor	; actorArm					
 			actorArmorList[3] 	= _victim.GetWornForm(0x00200000) as Armor	; actorChest
 			actorArmorList[4]	= _victim.GetWornForm(0x00000004) as Armor	; actorArmor
-			actorArmorList[5] 	= _victim.GetWornForm(0x10000000) as Armor	; actorPanty
+			actorArmorList[5] 	= _victim.GetWornForm(0x00400000) as Armor	; actorPanty
 
 			int idx = Utility.RandomInt(0, 4)
 			while idx < actorArmorList.length 

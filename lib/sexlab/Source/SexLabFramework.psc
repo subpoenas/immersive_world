@@ -2947,7 +2947,6 @@ endFunction
 
 ; Data
 sslSystemConfig property Config auto hidden
-Faction property AnimatingFaction auto hidden
 Actor property PlayerRef auto hidden
 
 ; Function libraries
@@ -2997,7 +2996,6 @@ function Setup()
 	endIf
 	; Sync Data
 	PlayerRef        = Game.GetPlayer()
-	AnimatingFaction = Config.AnimatingFaction
 	; Check if main framework file, or extended
 	IsExtension = self != SexLab
 	if IsExtension

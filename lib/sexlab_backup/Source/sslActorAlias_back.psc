@@ -1026,12 +1026,15 @@ int function GetEnjoyment()
 		Enjoyment = 0
 	elseif !IsSkilled
 		Enjoyment = (PapyrusUtil.ClampFloat(((RealTime[0] - StartedAt) + 1.0) / 5.0, 0.0, 40.0) + ((Stage as float / StageCount as float) * 60.0)) as int
-	else
+		Debug.Notification("here1 " + Enjoyment +", rt: " + RealTime[0] + ", sa: " + StartedAt)
+	else		
 		if Position == 0
 			Thread.RecordSkills()
 			Thread.SetBonuses()
 		endIf
 		Enjoyment = BaseEnjoyment + CalcEnjoyment(SkillBonus, Skills, LeadIn, IsFemale, (RealTime[0] - StartedAt), Stage, StageCount)
+
+		Debug.Notification("here2 " + Enjoyment +", rt: " + RealTime[0] + ", sa: " + StartedAt + ", b:" + BaseEnjoyment)
 		if Enjoyment < 0
 			Enjoyment = 0
 		elseIf Enjoyment > 100

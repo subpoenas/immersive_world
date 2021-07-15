@@ -350,7 +350,7 @@ state Making
 		endIf
 		; Search for nearby bed
 		if !CenterRef && BedStatus[0] != -1
-			isBedRole = CenterOnBed(HasPlayer, 750.0)
+			isBedRole = CenterOnBed(HasPlayer, 350.0)
 		else 
 			isBedRole = false
 		endIf

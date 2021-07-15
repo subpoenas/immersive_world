@@ -10,7 +10,7 @@ function LoadAnimations()
 	; endIf
 	RegisterCategory("Missionary")
 
-	RegisterAnimation("ArrokRapeLegUp") 				; 완료
+	RegisterAnimation("ArrokLegUpRape") 				; 완료
 	RegisterCategory("Rape")
 
 	; DoggyStyle
@@ -100,7 +100,7 @@ function SexLabMissionary(int id)
 	Base.Save(id)
 endFunction
 
-function ArrokRapeLegUp(int id)
+function ArrokLegUpRape(int id)
 	sslBaseAnimation Base = Create(id)
 
 	Base.Name    = "Arrok Rape Leg Up"

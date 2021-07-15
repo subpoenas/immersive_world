@@ -17,12 +17,12 @@ function FemalePlayer(int id)
 	Base.Name   = "Female_Player"
 	Base.Gender = Female
 	
-	Base.Victim   	= Game.GetFormFromFile(0x02000D6A, "Sexlab plus.esp") as Sound
+	Base.Lead   	= Game.GetFormFromFile(0x02000D6A, "Sexlab plus.esp") as Sound
 	Base.Mild   	= Game.GetFormFromFile(0x02000D6E, "Sexlab plus.esp") as Sound
 	Base.Medium 	= Game.GetFormFromFile(0x02000D6F, "Sexlab plus.esp") as Sound
 	Base.Wild   	= Game.GetFormFromFile(0x02001DA2, "Sexlab plus.esp") as Sound
 	Base.Hot    	= Game.GetFormFromFile(0x02000D70, "Sexlab plus.esp") as Sound
-	Base.Orgasm 	= Game.GetFormFromFile(0x02000D71, "Sexlab plus.esp") as Sound	
+	Base.Orgasm 	= Game.GetFormFromFile(0x02000D71, "Sexlab plus.esp") as Sound
 
 	Base.SetTags("Female,Player")
 
@@ -36,7 +36,7 @@ function FemaleYoung(int id)
 	Base.Name   = "Female_Young"
 	Base.Gender = Female
 
-	Base.Victim   	= Game.GetFormFromFile(0x02002315, "Sexlab plus.esp") as Sound
+	Base.Lead   	= Game.GetFormFromFile(0x02002315, "Sexlab plus.esp") as Sound
 	Base.Mild   	= Game.GetFormFromFile(0x0200231A, "Sexlab plus.esp") as Sound
 	Base.Medium 	= Game.GetFormFromFile(0x0200231B, "Sexlab plus.esp") as Sound
 	Base.Wild   	= Game.GetFormFromFile(0x02002319, "Sexlab plus.esp") as Sound
@@ -55,7 +55,7 @@ function MaleYoung(int id)
 	Base.Name   = "Male_Young"
 	Base.Gender = Male
 	
-	Base.Victim   	= Game.GetFormFromFile(0x020063D4, "Sexlab plus.esp") as Sound	
+	Base.Lead   	= Game.GetFormFromFile(0x020063D4, "Sexlab plus.esp") as Sound	
 	Base.Mild   	= Game.GetFormFromFile(0x020063D4, "Sexlab plus.esp") as Sound
 	Base.Medium 	= Game.GetFormFromFile(0x020063D5, "Sexlab plus.esp") as Sound
 	Base.Wild   	= Game.GetFormFromFile(0x020063D6, "Sexlab plus.esp") as Sound

@@ -36,7 +36,8 @@ Sound	property SfxMouthSound auto hidden
 Sound	property SfxDeepMouthSound auto hidden
 Sound	property SfxAfraidSound auto hidden
 Sound	property SfxHappySound auto hidden
-Sound   property SfxBreathSound auto hidden
+Sound   property SfxHappyBreathSound auto hidden
+Sound   property SfxSadBreathSound auto hidden
 Sound	property SfxBedSound auto hidden
 
 ; Topic 	SfxDialogDoggyTopic
@@ -71,9 +72,12 @@ function init()
 	SfxHappySound		   = Game.GetFormFromFile(0x02014B7A, "Sexlab plus.esp") as Sound
 
 	SfxBedSound            = Game.GetFormFromFile(0x02007EC8, "Sexlab plus.esp") as Sound
-	SfxBreathSound         = Game.GetFormFromFile(0x02007964, "Sexlab plus.esp") as Sound
 
-	SfxDialogRapeTopic	   = Game.GetFormFromFile(0x0200C4D7, "Sexlab plus.esp") as Topic
+	SfxHappyBreathSound    = Game.GetFormFromFile(0x02017BEB, "Sexlab plus.esp") as Sound
+	SfxSadBreathSound      = Game.GetFormFromFile(0x02007964, "Sexlab plus.esp") as Sound
+
+	; SfxDialogRapeTopic	   = Game.GetFormFromFile(0x0200C4D7, "Sexlab plus.esp") as Topic
+	SfxDialogRapeTopic	   = Game.GetFormFromFile(0x02019173, "Sexlab plus.esp") as Topic
 	SfxDialogCowgirlTopic  = Game.GetFormFromFile(0x02011597, "Sexlab plus.esp") as Topic
 	SfxDialogDoggyTopic	   = Game.GetFormFromFile(0x02011AFC, "Sexlab plus.esp") as Topic
 endfunction
@@ -144,7 +148,6 @@ state Prepare
 			; Start time trackers
 			RealTime[0] = Utility.GetCurrentRealTime()
 			SkillTime = RealTime[0]
-			StartedAt = RealTime[0]
 			; Start actor loops
 			SyncEvent(kStartup, 10.0)
 		else
@@ -189,7 +192,6 @@ state Advancing
 	event OnUpdate()		
 		string[] aniTags = Animation.GetRawTags()		
 		SfxPlayRole = -1
-		HasPlayer = false
 		hasFurnitureRole = false
 		SfxDialogTopic = none
 		; 0: missionary, 1: cowgirl, 2: aggressive, 3: rape, 4:doggy, 5: blowjob, 6:kiss		
@@ -211,7 +213,7 @@ state Advancing
 			SfxPlayRole = 0
 		endif 		
 
-		if isBedRole || aniTags.Find("Furniture") || aniTags.Find("Chair")
+		if isBedRole || aniTags.Find("Furniture") != -1 || aniTags.Find("Chair") != -1
 			hasFurnitureRole = true
 		endif
 		
@@ -599,7 +601,11 @@ state Animating
 			SoundFX.Play(CenterRef)
 		endIf
 		QuickEvent("Orgasm")
-		RegisterForSingleUpdate(0.5)
+		if Config.OrgasmEffects
+			RegisterForSingleUpdate(6.0)
+		else 
+			RegisterForSingleUpdate(0.5)
+		endif
 	endFunction
 
 	function ResetPositions()
